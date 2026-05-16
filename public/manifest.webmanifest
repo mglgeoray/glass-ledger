@@ -1,0 +1,16 @@
+{
+  "name": "Шилний данс",
+  "short_name": "Шилний данс",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f0e7",
+  "theme_color": "#eadbc4",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
