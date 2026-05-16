@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#eadbc4" />
+    <title>Шилний данс</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/styles.css?v=20260516f" />
+  </head>
+  <body>
+    <div class="grain"></div>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">БОРЛУУЛАЛТ • ИМПОРТ • НӨӨЦ</p>
+          <h1>Шилний данс</h1>
+          <p class="hero-copy">
+            2 төрлийн шилний импорт, борлуулалт, хувааж төлсөн төлбөр, гэмтэлтэй болон хагарсан шил,
+            үлдэгдэл, 1 ширхэгийн өртөг, ашигийн явцыг нэг дороос хөтөлнө.
+          </p>
+        </div>
+
+        <div class="hero-actions">
+          <div class="role-chip" id="roleChip">Зочин</div>
+          <button class="ghost-button" id="logoutButton" type="button" hidden>Гарах</button>
+        </div>
+      </section>
+
+      <section class="tabs" id="productTabs" aria-label="Шилний төрөл"></section>
+
+      <section class="inventory-note">
+        <div>
+          <p class="inventory-label">Сонгосон төрөл</p>
+          <h2 id="productTitle">1370 x 2200 x 4 мм</h2>
+        </div>
+        <p id="productMeta">Импортын эхний мөрөө оруулмагц нийт нөөц автоматаар тооцогдоно.</p>
+      </section>
+
+      <section class="summary-grid" id="summaryGrid">
+        <article class="summary-card">
+          <p>Нийт импорт</p>
+          <strong id="importedValue">0</strong>
+          <span>ширхэг</span>
+        </article>
+        <article class="summary-card accent">
+          <p>Борлуулсан</p>
+          <strong id="soldValue">0</strong>
+          <span>ширхэг</span>
+        </article>
+        <article class="summary-card danger">
+          <p>Гэмтэл / хагарал</p>
+          <strong id="damagedValue">0</strong>
+          <span>ширхэг</span>
+        </article>
+        <article class="summary-card">
+          <p>Үлдэгдэл</p>
+          <strong id="remainingValue">0</strong>
+          <span>ширхэг</span>
+        </article>
+        <article class="summary-card">
+          <p>Нийт дүн</p>
+          <strong id="billedValue">0</strong>
+          <span>₮</span>
+        </article>
+        <article class="summary-card accent">
+          <p>Төлсөн</p>
+          <strong id="collectedValue">0</strong>
+          <span>₮</span>
+        </article>
+        <article class="summary-card warning">
+          <p>Үлдэгдэл авлага</p>
+          <strong id="receivableValue">0</strong>
+          <span>₮</span>
+        </article>
+      </section>
+
+      <section class="progress-card">
+        <div class="progress-header">
+          <span>Борлуулалтын явц</span>
+          <strong id="progressValue">0%</strong>
+        </div>
+        <p class="toolbar-copy" id="progressCaption">
+          Импортын нөөц орж ирмэгц борлуулсан болон гэмтэлтэй үлдэгдлийн хувь энд харагдана.
+        </p>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </section>
+
+      <section class="editor-zone hidden" id="editorZone">
+        <div class="editor-zone-header">
+          <div>
+            <p class="eyebrow" id="editorZoneEyebrow">ЗАСВАРЛАГЧИЙН САНХҮҮ</p>
+            <h2 id="editorZoneTitle">Импорт, гэмтэл, өртөг ба ашиг</h2>
+            <p class="editor-zone-copy" id="editorZoneCopy">
+              Импортын мөр бүр дээр авдар, 1 авдарт ширхэг, импортын зардлаа гараар бүртгэнэ. Нөөц
+              дуусаагүй байхад дахин импорт хийвэл шинэ batch болж нэмэгдээд, үлдэгдэл болон ашигийн
+              тооцоо автоматаар уялдана. Бараа материалын тусдаа худалдан авалт нь ашиг, алдагдлын
+              тооцоонд орохгүй.
+            </p>
+          </div>
+        </div>
+
+        <div class="editor-grid">
+          <article class="finance-card span-2" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">ШИЛНИЙ ТӨРӨЛ</p>
+                <h3>Шинэ шилний төрөл нэмэх</h3>
+                <p class="finance-card-copy">
+                  ADMIN эндээс шинэ шилний төрөл үүсгэж, нэр болон 1 авдарт байх анхны ширхэгийн утгыг
+                  тохируулна. Ашиглагдаж байгаа төрлийг устгахыг систем автоматаар хориглоно.
+                </p>
+              </div>
+            </div>
+
+            <form id="productForm" class="purchase-form">
+              <input id="productIdInput" name="productId" type="hidden" />
+
+              <div class="form-grid">
+                <label>
+                  Шилний нэр
+                  <input id="productNameInput" name="name" type="text" placeholder="Жишээ: 1830 x 2440 x 5 мм" required />
+                </label>
+
+                <label>
+                  1 авдарт ширхэг
+                  <input
+                    id="productPiecesPerCrateInput"
+                    name="defaultPiecesPerCrate"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="82"
+                    required
+                  />
+                </label>
+              </div>
+
+              <p class="form-message" id="productMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" id="saveProductButton" type="submit">Төрөл хадгалах</button>
+                <button class="ghost-button" id="resetProductButton" type="button">Цэвэрлэх</button>
+              </div>
+            </form>
+
+            <div class="soft-summary accent">
+              <span id="productSummaryText">Одоогоор шилний төрөл бүртгэлгүй байна.</span>
+            </div>
+
+            <div class="table-scroll small-table-scroll">
+              <table class="secondary-table">
+                <thead>
+                  <tr>
+                    <th>Нэр</th>
+                    <th>1 авдарт ш</th>
+                    <th>Үлдэгдэл</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="productTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="finance-card span-2" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">ӨРТӨГ БА АШИГ</p>
+                <h3>Жигнэсэн дундаж өртгийн самбар</h3>
+                <p class="finance-card-copy">
+                  Импортын бүх batch-ийн зардлыг нийлүүлж, 1 ширхэгийн өртгийг автоматаар гаргана.
+                  Гэмтэлтэй болон хагарсан шилний өртөг тусдаа тооцогдоно.
+                </p>
+              </div>
+            </div>
+
+            <div class="finance-stat-grid">
+              <article class="mini-card">
+                <span>Импортын нийт өртөг</span>
+                <strong id="importedCostValue">0 ₮</strong>
+              </article>
+              <article class="mini-card">
+                <span>1 ширхэгийн өртөг</span>
+                <strong id="pieceCostValue">0 ₮</strong>
+              </article>
+              <article class="mini-card">
+                <span>Борлуулсан өртөг</span>
+                <strong id="soldCostValue">0 ₮</strong>
+              </article>
+              <article class="mini-card warning">
+                <span>Гэмтлийн өртөг</span>
+                <strong id="damageCostValue">0 ₮</strong>
+              </article>
+              <article class="mini-card">
+                <span>Үлдэгдэл нөөцийн өртөг</span>
+                <strong id="remainingCostValue">0 ₮</strong>
+              </article>
+              <article class="mini-card accent">
+                <span>Цэвэр ашиг</span>
+                <strong id="netProfitValue">0 ₮</strong>
+              </article>
+            </div>
+
+            <div class="profit-panel">
+              <div class="profit-panel-header">
+                <span>Ашигийн явц</span>
+                <strong id="profitMarginValue">0%</strong>
+              </div>
+              <p class="profit-panel-copy" id="profitHint">
+                Импортын мөрүүдээ оруулмагц ашиг, өртөг, гэмтлийн нөлөө автоматаар бодогдоно.
+              </p>
+              <div class="progress-track">
+                <div class="progress-fill" id="profitProgressFill"></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="finance-card span-2" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">МЕНЕЖЕРИЙН ЭРХ</p>
+                <h3>Худалдааны менежер нэмэх</h3>
+                <p class="finance-card-copy">
+                  ADMIN эндээс худалдааны менежерийн нэр болон нэвтрэх код үүсгэнэ. Менежер тухайн
+                  кодоор нэвтрээд зөвхөн шинэ борлуулалтын мөр оруулах эрхтэй байна.
+                </p>
+              </div>
+            </div>
+
+            <form id="managerAccountForm" class="purchase-form">
+              <input id="managerAccountId" name="managerAccountId" type="hidden" />
+
+              <div class="form-grid">
+                <label>
+                  Менежерийн нэр
+                  <input id="managerNameInput" name="name" type="text" placeholder="Жишээ: Нараа" required />
+                </label>
+
+                <label>
+                  Нэвтрэх код
+                  <input id="managerCodeInput" name="accessCode" type="text" placeholder="Жишээ: naraa2026" required />
+                </label>
+              </div>
+
+              <p class="form-message" id="managerMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" id="saveManagerButton" type="submit">Менежер хадгалах</button>
+                <button class="ghost-button" id="resetManagerButton" type="button">Цэвэрлэх</button>
+              </div>
+            </form>
+
+            <div class="soft-summary accent">
+              <span id="managerSummaryText">Одоогоор нэмэгдсэн менежерийн эрх алга байна.</span>
+            </div>
+
+            <div class="table-scroll small-table-scroll">
+              <table class="secondary-table">
+                <thead>
+                  <tr>
+                    <th>Нэр</th>
+                    <th>Код</th>
+                    <th>Үүссэн</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="managerTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="finance-card" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">ИМПОРТЫН БҮРТГЭЛ</p>
+                <h3>Шинэ import batch нэмэх</h3>
+                <p class="finance-card-copy">
+                  Авдрын тоо болон 1 авдарт байгаа ширхэгийг гараар оруулна. Дахин импорт хийвэл өмнөх
+                  үлдэгдэл дээр автоматаар нэмэгдэнэ.
+                </p>
+              </div>
+            </div>
+
+            <form id="importBatchForm" class="cost-form">
+              <input id="importBatchId" name="importBatchId" type="hidden" />
+
+              <div class="form-grid">
+                <label>
+                  Импортын огноо
+                  <input id="importDateInput" name="date" type="date" required />
+                </label>
+
+                <label>
+                  Нийлүүлэгч
+                  <input id="importSupplierInput" name="supplier" type="text" placeholder="Жишээ: Хятад үйлдвэр" />
+                </label>
+
+                <label>
+                  Авдрын тоо
+                  <input id="importCratesInput" name="crates" type="number" min="1" step="1" placeholder="0" required />
+                </label>
+
+                <label>
+                  1 авдарт ширхэг
+                  <input
+                    id="importPiecesPerCrateInput"
+                    name="piecesPerCrate"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="82"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Импортын үнэ
+                  <input id="importCostInput" name="importCost" type="number" min="0" step="0.01" placeholder="0" />
+                </label>
+
+                <label>
+                  Татвар
+                  <input id="taxCostInput" name="taxCost" type="number" min="0" step="0.01" placeholder="0" />
+                </label>
+
+                <label>
+                  Тээврийн зардал
+                  <input
+                    id="transportCostInput"
+                    name="transportCost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0"
+                  />
+                </label>
+
+                <label>
+                  Цалин хөлс
+                  <input id="wageCostInput" name="wageCost" type="number" min="0" step="0.01" placeholder="0" />
+                </label>
+
+                <label>
+                  Бусад зардал
+                  <input id="otherCostInput" name="otherCost" type="number" min="0" step="0.01" placeholder="0" />
+                </label>
+
+                <label class="wide">
+                  Тэмдэглэл
+                  <textarea
+                    id="importNoteInput"
+                    name="note"
+                    rows="3"
+                    placeholder="Жишээ: 2 дахь импорт, үлдэгдэл дуусаагүй байхад нэмсэн"
+                  ></textarea>
+                </label>
+              </div>
+
+              <p class="form-message" id="importMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" id="saveImportBatchButton" type="submit">Импорт хадгалах</button>
+                <button class="ghost-button" id="resetImportBatchButton" type="button">Цэвэрлэх</button>
+              </div>
+            </form>
+
+            <div class="cost-summary-grid">
+              <article class="mini-card">
+                <span>Нийт ширхэг</span>
+                <strong id="importTotalPiecesPreview">0</strong>
+              </article>
+              <article class="mini-card">
+                <span>Нийт өртөг</span>
+                <strong id="importTotalCostPreview">0 ₮</strong>
+              </article>
+              <article class="mini-card accent">
+                <span>Preview 1 ширхэгийн өртөг</span>
+                <strong id="importPieceCostPreview">0 ₮</strong>
+              </article>
+            </div>
+
+            <div class="soft-summary accent">
+              <span id="importSummaryText">Одоогоор импортын мөр алга байна.</span>
+            </div>
+
+            <div class="table-scroll small-table-scroll">
+              <table class="secondary-table">
+                <thead>
+                  <tr>
+                    <th>Огноо</th>
+                    <th>Нийлүүлэгч</th>
+                    <th>Авдар</th>
+                    <th>1 авдарт ш</th>
+                    <th>Нийт ш</th>
+                    <th>Нийт өртөг</th>
+                    <th>1 ш өртөг</th>
+                    <th>Тэмдэглэл</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="importBatchTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="finance-card" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">ГЭМТЛИЙН БҮРТГЭЛ</p>
+                <h3>Гэмтэлтэй, хагарсан шил бүртгэх</h3>
+                <p class="finance-card-copy">
+                  Энд орсон ширхэгүүд борлуулалтын үлдэгдлээс автоматаар хасагдана. Ашигийн тооцоонд
+                  гэмтлийн өртөг хэлбэрээр тусгагдана.
+                </p>
+              </div>
+            </div>
+
+            <form id="damageForm" class="purchase-form">
+              <input id="damageRecordId" name="damageRecordId" type="hidden" />
+
+              <div class="form-grid">
+                <label>
+                  Огноо
+                  <input id="damageDateInput" name="date" type="date" required />
+                </label>
+
+                <label>
+                  Ширхэг
+                  <input id="damageQuantityInput" name="quantity" type="number" min="1" step="1" placeholder="0" required />
+                </label>
+
+                <label>
+                  Төрөл
+                  <select id="damageReasonInput" name="reason">
+                    <option value="broken">Хагарсан</option>
+                    <option value="damaged">Гэмтэлтэй</option>
+                    <option value="shortage">Дутуу / алдагдал</option>
+                    <option value="other">Бусад</option>
+                  </select>
+                </label>
+
+                <label class="wide">
+                  Тэмдэглэл
+                  <textarea id="damageNoteInput" name="note" rows="3" placeholder="Нэмэлт тайлбар"></textarea>
+                </label>
+              </div>
+
+              <p class="form-message" id="damageMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" id="saveDamageButton" type="submit">Гэмтэл хадгалах</button>
+                <button class="ghost-button" id="resetDamageButton" type="button">Цэвэрлэх</button>
+              </div>
+            </form>
+
+            <div class="soft-summary warning">
+              <span id="damageSummaryText">Гэмтлийн бүртгэл ороогүй байна.</span>
+            </div>
+
+            <div class="table-scroll small-table-scroll">
+              <table class="secondary-table">
+                <thead>
+                  <tr>
+                    <th>Огноо</th>
+                    <th>Ширхэг</th>
+                    <th>Төрөл</th>
+                    <th>Тэмдэглэл</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="damageTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="finance-card span-2">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">ТУСДАА БҮРТГЭЛ</p>
+                <h3>Бараа материалын худалдан авалт</h3>
+                <p class="finance-card-copy">
+                  Энэ хэсэг архив шинжтэй бөгөөд ашиг, алдагдлын тооцоонд орохгүй. Зөвхөн материал,
+                  дагалдах зүйлсийн бүртгэлд ашиглана.
+                </p>
+              </div>
+            </div>
+
+            <p class="soft-note" id="purchaseReadonlyHint" hidden>
+              Худалдааны менежер энэ хэсгийг зөвхөн харах эрхтэй. Худалдан авалтын мөр нэмэх, засах,
+              устгахыг ADMIN хийдэг.
+            </p>
+
+            <form id="materialPurchaseForm" class="purchase-form">
+              <input id="materialPurchaseId" name="materialPurchaseId" type="hidden" />
+
+              <div class="form-grid">
+                <label>
+                  Огноо
+                  <input id="purchaseDateInput" name="date" type="date" required />
+                </label>
+
+                <label>
+                  Бараа материал
+                  <input id="purchaseItemInput" name="itemName" type="text" placeholder="Жишээ: Наалт, булан" required />
+                </label>
+
+                <label>
+                  Тоо хэмжээ
+                  <input id="purchaseQuantityInput" name="quantityText" type="text" placeholder="Жишээ: 5 боодол" />
+                </label>
+
+                <label>
+                  Нийт дүн
+                  <input id="purchaseAmountInput" name="amount" type="number" min="0" step="0.01" placeholder="0" required />
+                </label>
+
+                <label>
+                  Нийлүүлэгч
+                  <input id="purchaseSupplierInput" name="supplier" type="text" placeholder="Жишээ: Барилгын дэлгүүр" />
+                </label>
+
+                <label class="wide">
+                  Тэмдэглэл
+                  <textarea id="purchaseNoteInput" name="note" rows="3" placeholder="Нэмэлт тайлбар"></textarea>
+                </label>
+              </div>
+
+              <p class="form-message" id="purchaseMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" id="savePurchaseButton" type="submit">Худалдан авалт хадгалах</button>
+                <button class="ghost-button" id="resetPurchaseButton" type="button">Цэвэрлэх</button>
+              </div>
+            </form>
+
+            <div class="purchase-summary">
+              <span id="purchaseSummaryText">Нийт 0 мөр · 0 ₮</span>
+            </div>
+
+            <div class="table-scroll small-table-scroll">
+              <table class="secondary-table">
+                <thead>
+                  <tr>
+                    <th>Огноо</th>
+                    <th>Нэр</th>
+                    <th>Тоо хэмжээ</th>
+                    <th>Дүн (₮)</th>
+                    <th>Нийлүүлэгч</th>
+                    <th>Тэмдэглэл</th>
+                    <th id="purchaseActionHeader">Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="materialPurchaseTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div>
+          <p class="toolbar-title">Борлуулалтын мөрүүд</p>
+          <p class="toolbar-copy" id="toolbarCopy">
+            Зөвхөн нэвтэрсэн хэрэглэгч өгөгдлийг харна.
+          </p>
+        </div>
+        <button class="primary-button" id="addEntryButton" type="button" hidden>+ Мөр нэмэх</button>
+      </section>
+
+      <section class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>№</th>
+                <th>Огноо</th>
+                <th>Бүртгэсэн</th>
+                <th>Худалдан авагч</th>
+                <th>Тоо (ш)</th>
+                <th>Нэгж үнэ (₮)</th>
+                <th>Нийт дүн (₮)</th>
+                <th>Төлсөн (₮)</th>
+                <th>Авлага (₮)</th>
+                <th>Төлбөрийн задаргаа</th>
+                <th>Авдар</th>
+                <th>Тэмдэглэл</th>
+                <th class="actions-column">Үйлдэл</th>
+              </tr>
+            </thead>
+            <tbody id="entryTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        Импортын batch, борлуулалт, гэмтэл гурвын уялдаагаар үлдэгдэл бодогдоно. Тусдаа бараа материалын
+        бүртгэл нь ашиг, алдагдлын тооцоонд оролцохгүй.
+      </p>
+    </main>
+
+    <div class="auth-layer" id="authLayer">
+      <div class="auth-card">
+        <p class="eyebrow">ЭРХИЙН НЭВТРЭЛТ</p>
+        <h2>Шилний данс руу нэвтрэх</h2>
+        <p class="auth-copy">
+          ADMIN кодоор орвол бүх эрхтэй ажиллана. Худалдааны менежер кодыг ADMIN урьдчилж үүсгэсэн
+          байх ёстой. Менежер нэвтрээд шинэ борлуулалтын мэдээлэл оруулна, харин засах болон устгах
+          эрхгүй.
+        </p>
+
+        <form id="loginForm" class="auth-form">
+          <label>
+            Нэвтрэх код
+            <input
+              id="loginCode"
+              name="code"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Кодоор нэвтрэх"
+              required
+            />
+          </label>
+          <p class="form-message" id="loginMessage"></p>
+          <button class="primary-button full-width" type="submit">Нэвтрэх</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="entryModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">БОРЛУУЛАЛТЫН МӨР</p>
+            <h2 id="modalTitle">Шинэ мөр нэмэх</h2>
+          </div>
+          <button class="icon-button" id="closeModalButton" type="button" aria-label="Хаах">×</button>
+        </div>
+
+        <form id="entryForm" class="entry-form">
+          <input id="entryId" name="entryId" type="hidden" />
+
+          <div class="form-grid">
+            <label>
+              Шилний төрөл
+              <select id="productSelect" name="productId"></select>
+            </label>
+
+            <label>
+              Огноо
+              <input id="dateInput" name="date" type="date" required />
+            </label>
+
+            <label>
+              Бүртгэх хүн
+              <input id="recorderNameInput" name="recorderName" type="text" readonly />
+            </label>
+
+            <label class="wide">
+              Худалдан авагч
+              <input id="customerInput" name="customer" type="text" placeholder="Жишээ: Номин Барилга" required />
+            </label>
+
+            <label>
+              Тоо ширхэг
+              <input id="quantityInput" name="quantity" type="number" min="1" step="1" placeholder="0" required />
+            </label>
+
+            <label>
+              Нэгж үнэ
+              <input id="unitPriceInput" name="unitPrice" type="number" min="0" step="0.01" placeholder="0" />
+            </label>
+
+            <label>
+              Авдар
+              <input id="crateInput" name="crateLabel" type="text" placeholder="Жишээ: 3-р авдар" />
+            </label>
+
+            <label class="wide">
+              Тэмдэглэл
+              <textarea id="noteInput" name="note" rows="3" placeholder="Нэмэлт тайлбар"></textarea>
+            </label>
+          </div>
+
+          <p class="toolbar-copy" id="recorderHint">
+            Нэвтэрсэн хэрэглэгчийн нэр энэ борлуулалтын мөр дээр автоматаар хадгалагдана.
+          </p>
+
+          <section class="payment-editor">
+            <div class="payment-editor-header">
+              <div>
+                <p class="payment-editor-title">Төлбөрийн задаргаа</p>
+                <p class="payment-editor-copy">
+                  Бэлэн болон дансаар 2-3 хувааж төлсөн бол тус бүрийг нь оруулна.
+                </p>
+              </div>
+              <button class="ghost-button compact-button" id="addPaymentPartButton" type="button">
+                + Төлбөр нэмэх
+              </button>
+            </div>
+            <div class="payment-list" id="paymentList"></div>
+          </section>
+
+          <div class="form-summary">
+            <div>
+              <span>Одоогийн боломжит үлдэгдэл</span>
+              <strong id="formAvailableStock">0 ширхэг</strong>
+            </div>
+            <div>
+              <span>Нийт дүн</span>
+              <strong id="formTotalAmount">0 ₮</strong>
+            </div>
+            <div>
+              <span>Төлсөн дүн</span>
+              <strong id="formPaidAmount">0 ₮</strong>
+            </div>
+            <div>
+              <span>Үлдэгдэл авлага</span>
+              <strong id="formReceivableAmount">0 ₮</strong>
+            </div>
+          </div>
+
+          <p class="form-message" id="entryMessage"></p>
+
+          <div class="modal-actions">
+            <button class="ghost-button" id="cancelModalButton" type="button">Болих</button>
+            <button class="primary-button" id="saveEntryButton" type="submit">Хадгалах</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/app.js?v=20260516f" defer></script>
+  </body>
+</html>
