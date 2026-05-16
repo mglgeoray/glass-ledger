@@ -104,14 +104,19 @@ Volume mount path нь:
 
 ## Нэвтрэх код
 
-Анхны default код:
+Локал туршилтын орчинд л default код үүсч болно.
 
-- ADMIN: `Sun60077779`
-- Анхны худалдааны менежер: `viewer123`
+Public хост дээр:
+
+- `GLASS_LEDGER_ADMIN_CODE`-ийг заавал хүчтэй утгаар өгнө
+- `GLASS_LEDGER_MANAGER_CODE`-ийг хүчтэй утгаар өгч болно, эсвэл эхний manager-гүй асаагаад ADMIN-аас дараа нь үүсгэнэ
+- `GLASS_LEDGER_ALLOW_INSECURE_DEFAULTS=0` хэвээр үлдээнэ
 
 Хэрвээ өөр код хэрэгтэй бол `glass-ledger/data/credentials.runtime.json` файл сервер анх асахад автоматаар үүснэ. Тэр файлын кодыг солиод серверээ дахин асаана.
 
 Online орчинд default код үлдээхгүй, дээрх environment variable-аар өөрчилж ашиглах нь зөв.
+
+Хэрвээ source code-оо бусдад харагдуулахгүй бол GitHub repository-оо `Private` болгохыг зөвлөе.
 
 ## Өгөгдөл хадгалах
 
