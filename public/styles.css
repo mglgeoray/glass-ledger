@@ -204,6 +204,17 @@ h1 {
   transform: translateY(-1px);
 }
 
+.primary-button:disabled,
+.ghost-button:disabled,
+.icon-button:disabled,
+.tab-button:disabled,
+.inline-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
 .full-width {
   width: 100%;
 }
@@ -411,6 +422,7 @@ h1 {
 
 .table-scroll {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -864,6 +876,30 @@ textarea:focus {
   .editor-grid {
     grid-template-columns: 1fr;
   }
+
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .modal {
+    align-items: start;
+    place-items: start center;
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .modal-card {
+    max-height: none;
+    width: 100%;
+  }
 }
 
 @media (max-width: 640px) {
@@ -880,9 +916,38 @@ textarea:focus {
     font-size: 2.4rem;
   }
 
+  .hero,
+  .inventory-note,
+  .progress-card,
+  .toolbar,
+  .editor-zone,
+  .finance-card,
+  .table-card,
+  .auth-card,
+  .modal-card {
+    border-radius: 18px;
+  }
+
+  .hero,
+  .inventory-note,
+  .toolbar,
+  .editor-zone,
+  .finance-card,
+  .auth-card,
+  .modal-card {
+    padding: 18px 14px;
+  }
+
+  .eyebrow {
+    letter-spacing: 0.14rem;
+    line-height: 1.5;
+  }
+
   .hero-actions {
     justify-content: space-between;
     align-items: center;
+    flex-direction: column;
+    width: 100%;
   }
 
   .toolbar {
@@ -896,5 +961,41 @@ textarea:focus {
 
   .modal-actions {
     flex-direction: column-reverse;
+  }
+
+  .payment-editor {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .payment-row {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 48px;
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .table-scroll {
+    margin-inline: -14px;
+    padding-inline: 14px;
+  }
+
+  table {
+    min-width: 980px;
+  }
+
+  .secondary-table {
+    min-width: 760px;
+  }
+
+  thead th,
+  tbody td {
+    padding: 12px 10px;
   }
 }

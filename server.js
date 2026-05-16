@@ -30,6 +30,21 @@ let storeCache;
 let credentialsCache;
 let writeQueue = Promise.resolve();
 
+function createHttpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function asBadRequest(operation) {
+  try {
+    return operation();
+  } catch (error) {
+    error.statusCode = error.statusCode || 400;
+    throw error;
+  }
+}
+
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -799,7 +814,7 @@ function readRequestBody(request) {
     request.on("data", (chunk) => {
       totalBytes += chunk.length;
       if (totalBytes > ONE_MB) {
-        reject(new Error("Payload is too large."));
+        reject(createHttpError(413, "Payload is too large."));
         request.destroy();
         return;
       }
@@ -816,7 +831,7 @@ function readRequestBody(request) {
       try {
         resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
       } catch {
-        reject(new Error("Invalid JSON payload."));
+        reject(createHttpError(400, "Invalid JSON payload."));
       }
     });
 
@@ -1392,13 +1407,14 @@ async function sendEditorPayload(response, session, store, statusCode = 200) {
 
 async function handleApiRequest(request, response, url) {
   const pathname = url.pathname;
-  const store = await getStore();
-  const credentials = await getCredentials();
 
   if (request.method === "GET" && pathname === "/api/health") {
     sendJson(response, 200, { ok: true });
     return;
   }
+
+  const store = await getStore();
+  const credentials = await getCredentials();
 
   if (request.method === "GET" && pathname === "/api/bootstrap") {
     const session = getSession(request);
@@ -1475,7 +1491,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalizedManager = validateManagerAccount(body, credentials);
+    const normalizedManager = asBadRequest(() => validateManagerAccount(body, credentials));
     const timestamp = new Date().toISOString();
 
     credentials.managerAccounts.push({
@@ -1504,7 +1520,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalizedManager = validateManagerAccount(body, credentials, managerId);
+    const normalizedManager = asBadRequest(() => validateManagerAccount(body, credentials, managerId));
 
     credentials.managerAccounts[managerIndex] = {
       ...credentials.managerAccounts[managerIndex],
@@ -1544,7 +1560,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalizedProduct = validateProduct(body, store);
+    const normalizedProduct = asBadRequest(() => validateProduct(body, store));
 
     store.products.push({
       id: crypto.randomUUID(),
@@ -1570,7 +1586,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalizedProduct = validateProduct(body, store, productId);
+    const normalizedProduct = asBadRequest(() => validateProduct(body, store, productId));
 
     store.products[productIndex] = {
       ...store.products[productIndex],
@@ -1623,7 +1639,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalized = validateEntry(body, store);
+    const normalized = asBadRequest(() => validateEntry(body, store));
     const timestamp = new Date().toISOString();
 
     store.entries.push({
@@ -1654,7 +1670,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalized = validateEntry(body, store, entryId);
+    const normalized = asBadRequest(() => validateEntry(body, store, entryId));
 
     store.entries[entryIndex] = {
       ...store.entries[entryIndex],
@@ -1694,7 +1710,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalized = validateImportBatch(body, store);
+    const normalized = asBadRequest(() => validateImportBatch(body, store));
     const timestamp = new Date().toISOString();
 
     store.importBatches.push({
@@ -1723,7 +1739,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalized = validateImportBatch(body, store, batchId);
+    const normalized = asBadRequest(() => validateImportBatch(body, store, batchId));
 
     store.importBatches[batchIndex] = {
       ...store.importBatches[batchIndex],
@@ -1770,7 +1786,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalized = validateDamageRecord(body, store);
+    const normalized = asBadRequest(() => validateDamageRecord(body, store));
     const timestamp = new Date().toISOString();
 
     store.damageRecords.push({
@@ -1799,7 +1815,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const normalized = validateDamageRecord(body, store, damageId);
+    const normalized = asBadRequest(() => validateDamageRecord(body, store, damageId));
 
     store.damageRecords[damageIndex] = {
       ...store.damageRecords[damageIndex],
@@ -1839,7 +1855,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const purchase = validateMaterialPurchase(body);
+    const purchase = asBadRequest(() => validateMaterialPurchase(body));
     const timestamp = new Date().toISOString();
 
     store.materialPurchases.push({
@@ -1868,7 +1884,7 @@ async function handleApiRequest(request, response, url) {
     }
 
     const body = await readRequestBody(request);
-    const purchase = validateMaterialPurchase(body);
+    const purchase = asBadRequest(() => validateMaterialPurchase(body));
 
     store.materialPurchases[purchaseIndex] = {
       ...store.materialPurchases[purchaseIndex],
@@ -1939,7 +1955,8 @@ const server = http.createServer(async (request, response) => {
     await serveStaticAsset(url.pathname, response);
   } catch (error) {
     console.error(error);
-    sendError(response, 500, "Сервер дээр алдаа гарлаа.");
+    const statusCode = Number.isInteger(error.statusCode) ? error.statusCode : 500;
+    sendError(response, statusCode, statusCode < 500 ? error.message : "Сервер дээр алдаа гарлаа.");
   }
 });
 

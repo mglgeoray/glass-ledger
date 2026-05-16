@@ -126,6 +126,7 @@ const elements = {
   resetProductButton: document.querySelector("#resetProductButton"),
   resetPurchaseButton: document.querySelector("#resetPurchaseButton"),
   roleChip: document.querySelector("#roleChip"),
+  saveEntryButton: document.querySelector("#saveEntryButton"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
   taxCostInput: document.querySelector("#taxCostInput"),
@@ -277,6 +278,15 @@ function canCreateSalesEntry() {
   return isAdmin() || isManager();
 }
 
+function getActiveInventoryStats() {
+  return state.activeProductId ? getInventoryStats(state.activeProductId) : null;
+}
+
+function canOpenNewSalesEntry() {
+  const stats = getActiveInventoryStats();
+  return canCreateSalesEntry() && Boolean(stats) && stats.remainingPieces > 0;
+}
+
 function canViewMaterialPurchases() {
   return isAdmin() || isManager();
 }
@@ -304,11 +314,39 @@ function renderRole() {
   elements.authLayer.classList.toggle("hidden", state.role !== "guest");
   document.body.classList.toggle("locked", state.role === "guest");
   elements.addEntryButton.hidden = !canCreateSalesEntry();
+  elements.addEntryButton.disabled = canCreateSalesEntry() && !canOpenNewSalesEntry();
+
+  const activeStats = getActiveInventoryStats();
+  if (canCreateSalesEntry() && activeStats && activeStats.remainingPieces <= 0) {
+    elements.addEntryButton.title = activeStats.importedPieces
+      ? "Үлдэгдэл дууссан тул энэ төрөл дээр шинэ борлуулалт нэмэх боломжгүй."
+      : "Эхлээд энэ шилний төрөл дээр импортын мөр бүртгэнэ үү.";
+  } else {
+    elements.addEntryButton.title = "";
+  }
 
   if (isAdmin()) {
-    showToolbarMessage("Та ADMIN эрхтэй нэвтэрсэн байна. Импорт, гэмтэл, борлуулалт, материалын мэдээлэл болон худалдааны менежерийн эрхүүдийг бүрэн удирдаж болно.");
+    if (activeStats && activeStats.remainingPieces <= 0) {
+      showToolbarMessage(
+        activeStats.importedPieces
+          ? "Энэ шилний төрөл дээр үлдэгдэл дууссан байна. Дахин импорт бүртгэсний дараа борлуулалт нэмнэ."
+          : "Энэ шилний төрөл дээр импорт бүртгэгдээгүй байна. Эхлээд импортын мөр нэмээд дараа нь борлуулалт оруулна.",
+        true,
+      );
+    } else {
+      showToolbarMessage("Та ADMIN эрхтэй нэвтэрсэн байна. Импорт, гэмтэл, борлуулалт, материалын мэдээлэл болон худалдааны менежерийн эрхүүдийг бүрэн удирдаж болно.");
+    }
   } else if (isManager()) {
-    showToolbarMessage("Та худалдааны менежерээр нэвтэрсэн байна. Шинэ борлуулалтын мэдээлэл оруулж, бараа материалын худалдан авалтын архивыг харах боломжтой.");
+    if (activeStats && activeStats.remainingPieces <= 0) {
+      showToolbarMessage(
+        activeStats.importedPieces
+          ? "Энэ төрөл дээр үлдэгдэл дууссан байна. ADMIN дахин импорт бүртгэсний дараа борлуулалт нэмнэ."
+          : "Энэ төрөл дээр импорт бүртгэгдээгүй байна. ADMIN эхлээд импортын мөр нэмэх шаардлагатай.",
+        true,
+      );
+    } else {
+      showToolbarMessage("Та худалдааны менежерээр нэвтэрсэн байна. Шинэ борлуулалтын мэдээлэл оруулж, бараа материалын худалдан авалтын архивыг харах боломжтой.");
+    }
   } else {
     showToolbarMessage("Кодоор нэвтэрч байж үлдэгдэл, борлуулалтын мэдээллийг харна.");
   }
@@ -998,6 +1036,17 @@ function openNewEntryModal() {
     return;
   }
 
+  if (!canOpenNewSalesEntry()) {
+    const stats = getActiveInventoryStats();
+    showToolbarMessage(
+      stats?.importedPieces
+        ? "Үлдэгдэл хүрэлцэхгүй байна. Энэ төрөл дээр дахин импорт бүртгээд борлуулалт нэмнэ үү."
+        : "Борлуулалт нэмэхийн өмнө энэ шилний төрөл дээр импортын мөр бүртгэнэ үү.",
+      true,
+    );
+    return;
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   elements.entryForm.reset();
   elements.entryId.value = "";
@@ -1227,6 +1276,10 @@ function updateFormSummary() {
   elements.formReceivableAmount.textContent = `${formatMoney(receivableAmount)} ₮`;
   elements.formPaidAmount.className = paidAmount > 0 ? "success-text" : "";
   elements.formReceivableAmount.className = receivableAmount <= 0 ? "success-text" : "warning-text";
+  elements.formAvailableStock.className = available > 0 ? "success-text" : "warning-text";
+  if (elements.saveEntryButton) {
+    elements.saveEntryButton.disabled = available <= 0;
+  }
 }
 
 function updateImportPreview() {
