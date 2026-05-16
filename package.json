@@ -1,0 +1,9 @@
+{
+  "name": "glass-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Responsive glass sales ledger for PC and mobile browsers",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
