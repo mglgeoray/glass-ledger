@@ -15,8 +15,17 @@ const HOST = process.env.HOST || "0.0.0.0";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const ONE_MB = 1024 * 1024;
 const SCHEMA_VERSION = 3;
+const DEFAULT_ADMIN_CODE = "Sun60077779";
+const DEFAULT_MANAGER_CODE = "viewer123";
+const DEFAULT_EDITOR_CODE = "editor123";
+const DEFAULT_MANAGER_NAME = "Худалдааны менежер 1";
+const LOGIN_MAX_ATTEMPTS = getEnvPositiveInteger("GLASS_LEDGER_LOGIN_MAX_ATTEMPTS", 8);
+const LOGIN_WINDOW_MS = getEnvPositiveInteger("GLASS_LEDGER_LOGIN_WINDOW_MINUTES", 15) * 60 * 1000;
+const LOGIN_BLOCK_MS = getEnvPositiveInteger("GLASS_LEDGER_LOGIN_BLOCK_MINUTES", 15) * 60 * 1000;
+const INSECURE_ACCESS_CODES = new Set([DEFAULT_ADMIN_CODE, DEFAULT_MANAGER_CODE, DEFAULT_EDITOR_CODE]);
 
 const sessions = new Map();
+const loginAttempts = new Map();
 let storeCache;
 let credentialsCache;
 let writeQueue = Promise.resolve();
@@ -44,6 +53,70 @@ function resolveDataDirectory() {
   return path.join(ROOT_DIR, "data");
 }
 
+function getEnvPositiveInteger(name, fallbackValue) {
+  const rawValue = String(process.env[name] || "").trim();
+  if (!rawValue) {
+    return fallbackValue;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackValue;
+}
+
+function isProductionLikeRuntime() {
+  const nodeEnv = String(process.env.NODE_ENV || "").trim().toLowerCase();
+  return (
+    nodeEnv === "production" ||
+    Boolean(String(process.env.RAILWAY_PROJECT_ID || "").trim()) ||
+    Boolean(String(process.env.RAILWAY_ENVIRONMENT || "").trim()) ||
+    Boolean(String(process.env.RAILWAY_PUBLIC_DOMAIN || "").trim())
+  );
+}
+
+function allowInsecureDefaultCredentials() {
+  return String(process.env.GLASS_LEDGER_ALLOW_INSECURE_DEFAULTS || "").trim() === "1";
+}
+
+function isPlaceholderAccessCode(value) {
+  const normalized = String(value || "").trim().toUpperCase();
+  return normalized.includes("CHANGE_THIS") || normalized.includes("CHANGE_ME") || normalized.includes("YOUR_");
+}
+
+function isInsecureAccessCode(value) {
+  const normalized = String(value || "").trim();
+  return !normalized || normalized.length < 8 || INSECURE_ACCESS_CODES.has(normalized) || isPlaceholderAccessCode(normalized);
+}
+
+function collectCredentialSecurityIssues(credentials) {
+  const issues = [];
+  if (isInsecureAccessCode(credentials.adminCode)) {
+    issues.push("ADMIN код сул эсвэл default утгатай байна.");
+  }
+
+  for (const account of credentials.managerAccounts || []) {
+    if (isInsecureAccessCode(account.accessCode)) {
+      issues.push(`Менежер "${account.name}"-ийн код сул эсвэл default утгатай байна.`);
+    }
+  }
+
+  return issues;
+}
+
+function enforceCredentialSecurity(credentials) {
+  if (!isProductionLikeRuntime() || allowInsecureDefaultCredentials()) {
+    return;
+  }
+
+  const issues = collectCredentialSecurityIssues(credentials);
+  if (!issues.length) {
+    return;
+  }
+
+  throw new Error(
+    `Security check failed for public deployment.\n${issues.join("\n")}\nSet strong values in GLASS_LEDGER_ADMIN_CODE and manager access codes before starting the app.`,
+  );
+}
+
 function buildDefaultStore() {
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -67,20 +140,34 @@ function buildDefaultStore() {
 }
 
 function buildDefaultCredentials() {
-  const seededManagerCode = process.env.GLASS_LEDGER_MANAGER_CODE || process.env.GLASS_LEDGER_VIEWER_CODE || "viewer123";
-  const seededManagerName = normalizeUserDisplayName(process.env.GLASS_LEDGER_MANAGER_NAME || "Худалдааны менежер 1") || "Худалдааны менежер 1";
+  const seededManagerCode = String(process.env.GLASS_LEDGER_MANAGER_CODE || process.env.GLASS_LEDGER_VIEWER_CODE || "").trim();
+  const seededManagerName = normalizeUserDisplayName(process.env.GLASS_LEDGER_MANAGER_NAME || DEFAULT_MANAGER_NAME) || DEFAULT_MANAGER_NAME;
 
   return {
-    adminCode: process.env.GLASS_LEDGER_ADMIN_CODE || process.env.GLASS_LEDGER_EDITOR_CODE || "Sun60077779",
-    managerAccounts: [
-      {
-        id: crypto.randomUUID(),
-        name: seededManagerName,
-        accessCode: seededManagerCode,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
+    adminCode:
+      String(process.env.GLASS_LEDGER_ADMIN_CODE || process.env.GLASS_LEDGER_EDITOR_CODE || "").trim() ||
+      (isProductionLikeRuntime() ? "" : DEFAULT_ADMIN_CODE),
+    managerAccounts: seededManagerCode
+      ? [
+          {
+            id: crypto.randomUUID(),
+            name: seededManagerName,
+            accessCode: seededManagerCode,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ]
+      : isProductionLikeRuntime()
+        ? []
+        : [
+            {
+              id: crypto.randomUUID(),
+              name: seededManagerName,
+              accessCode: DEFAULT_MANAGER_CODE,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
   };
 }
 
@@ -99,7 +186,7 @@ function normalizeCredentials(rawCredentials) {
       managerAccounts = [
         {
           id: crypto.randomUUID(),
-          name: normalizeUserDisplayName(raw.managerName || "Худалдааны менежер 1") || "Худалдааны менежер 1",
+          name: normalizeUserDisplayName(raw.managerName || DEFAULT_MANAGER_NAME) || DEFAULT_MANAGER_NAME,
           accessCode: legacyManagerCode,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -497,6 +584,7 @@ async function getStore() {
 async function getCredentials() {
   if (!credentialsCache) {
     credentialsCache = normalizeCredentials(await ensureJsonFile(CREDENTIALS_FILE, buildDefaultCredentials()));
+    enforceCredentialSecurity(credentialsCache);
   }
   return credentialsCache;
 }
@@ -525,17 +613,26 @@ async function persistStore() {
   return writeQueue;
 }
 
+function buildSecurityHeaders() {
+  return {
+    "Referrer-Policy": "same-origin",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+  };
+}
+
 function sendJson(response, statusCode, payload, extraHeaders = {}) {
   response.writeHead(statusCode, {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
+    ...buildSecurityHeaders(),
     ...extraHeaders,
   });
   response.end(JSON.stringify(payload));
 }
 
-function sendError(response, statusCode, message) {
-  sendJson(response, statusCode, { error: message });
+function sendError(response, statusCode, message, extraHeaders = {}) {
+  sendJson(response, statusCode, { error: message }, extraHeaders);
 }
 
 function parseCookies(request) {
@@ -559,6 +656,64 @@ function parseCookies(request) {
       result[key] = decodeURIComponent(value);
       return result;
     }, {});
+}
+
+function getClientAddress(request) {
+  const forwardedFor = String(request.headers["x-forwarded-for"] || "")
+    .split(",")[0]
+    .trim();
+  const remoteAddress = String(request.socket?.remoteAddress || "").trim();
+  return (forwardedFor || remoteAddress || "unknown").replace(/^::ffff:/, "");
+}
+
+function clearExpiredLoginAttempts(now = Date.now()) {
+  for (const [address, state] of loginAttempts.entries()) {
+    const shouldDrop = state.blockedUntil <= now && now - state.lastAttemptAt > LOGIN_WINDOW_MS;
+    if (shouldDrop) {
+      loginAttempts.delete(address);
+    }
+  }
+}
+
+function getLoginBlockRemainingMs(request) {
+  clearExpiredLoginAttempts();
+  const state = loginAttempts.get(getClientAddress(request));
+  if (!state || state.blockedUntil <= Date.now()) {
+    return 0;
+  }
+
+  return Math.max(0, state.blockedUntil - Date.now());
+}
+
+function registerFailedLogin(request) {
+  const now = Date.now();
+  const address = getClientAddress(request);
+  const existingState = loginAttempts.get(address);
+  const state =
+    existingState && now - existingState.firstAttemptAt <= LOGIN_WINDOW_MS
+      ? existingState
+      : { count: 0, firstAttemptAt: now, lastAttemptAt: now, blockedUntil: 0 };
+
+  if (state.blockedUntil > now) {
+    state.lastAttemptAt = now;
+    loginAttempts.set(address, state);
+    return;
+  }
+
+  state.count += 1;
+  state.lastAttemptAt = now;
+
+  if (state.count >= LOGIN_MAX_ATTEMPTS) {
+    state.count = 0;
+    state.firstAttemptAt = now;
+    state.blockedUntil = now + LOGIN_BLOCK_MS;
+  }
+
+  loginAttempts.set(address, state);
+}
+
+function clearLoginThrottle(request) {
+  loginAttempts.delete(getClientAddress(request));
 }
 
 function createSession(role, displayName, accountId) {
@@ -623,7 +778,7 @@ function setSessionCookie(request, response, role, displayName, accountId) {
   const token = createSession(role, displayName, accountId);
   response.setHeader(
     "Set-Cookie",
-    `glass_ledger_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${Math.floor(
+    `glass_ledger_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(
       SESSION_TTL_MS / 1000,
     )}${isSecureRequest(request) ? "; Secure" : ""}`,
   );
@@ -632,7 +787,7 @@ function setSessionCookie(request, response, role, displayName, accountId) {
 function clearSessionCookie(request, response) {
   response.setHeader(
     "Set-Cookie",
-    `glass_ledger_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${isSecureRequest(request) ? "; Secure" : ""}`,
+    `glass_ledger_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${isSecureRequest(request) ? "; Secure" : ""}`,
   );
 }
 
@@ -1110,8 +1265,8 @@ function validateManagerAccount(payload, credentials, existingManagerId) {
     throw new Error("Худалдааны менежерийн нэрийг оруулна уу.");
   }
 
-  if (accessCode.length < 4) {
-    throw new Error("Менежерийн нэвтрэх код хамгийн багадаа 4 тэмдэгттэй байна.");
+  if (isInsecureAccessCode(accessCode)) {
+    throw new Error("Менежерийн нэвтрэх код хамгийн багадаа 8 тэмдэгттэй, default биш, таахад хэцүү байх ёстой.");
   }
 
   if (accessCode === credentials.adminCode) {
@@ -1151,6 +1306,7 @@ async function serveStaticAsset(requestPath, response) {
     response.writeHead(200, {
       "Cache-Control": "no-store",
       "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
+      ...buildSecurityHeaders(),
     });
     response.end(fileContents);
   } catch (error) {
@@ -1164,6 +1320,7 @@ async function serveStaticAsset(requestPath, response) {
       response.writeHead(200, {
         "Cache-Control": "no-store",
         "Content-Type": "text/html; charset=utf-8",
+        ...buildSecurityHeaders(),
       });
       response.end(fallback);
       return;
@@ -1262,6 +1419,17 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (request.method === "POST" && pathname === "/api/login") {
+    const blockRemainingMs = getLoginBlockRemainingMs(request);
+    if (blockRemainingMs > 0) {
+      sendError(
+        response,
+        429,
+        `Олон удаа буруу код оруулсан байна. ${Math.ceil(blockRemainingMs / 60000)} минутын дараа дахин оролдоно уу.`,
+        { "Retry-After": String(Math.ceil(blockRemainingMs / 1000)) },
+      );
+      return;
+    }
+
     const body = await readRequestBody(request);
     const accessCode = String(body.code || "").trim();
 
@@ -1281,10 +1449,12 @@ async function handleApiRequest(request, response, url) {
     }
 
     if (!role) {
+      registerFailedLogin(request);
       sendError(response, 401, "Нэвтрэх код буруу байна.");
       return;
     }
 
+    clearLoginThrottle(request);
     setSessionCookie(request, response, role, sessionDisplayName, accountId);
     sendJson(response, 200, { role, currentUser: { role, displayName: sessionDisplayName } });
     return;
@@ -1773,14 +1943,24 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, HOST, async () => {
-  const credentials = await getCredentials();
-  console.log("Glass ledger app is running.");
-  console.log(`Data directory: ${describeDataLocation()}`);
-  console.log(`ADMIN code configured: ${maskSecret(credentials.adminCode)}`);
-  console.log(`Manager accounts configured: ${credentials.managerAccounts.length}`);
-  console.log(`Schema version: ${SCHEMA_VERSION}`);
-  for (const url of getLanUrls()) {
-    console.log(`Open: ${url}`);
+async function startServer() {
+  try {
+    const credentials = await getCredentials();
+    server.listen(PORT, HOST, () => {
+      console.log("Glass ledger app is running.");
+      console.log(`Data directory: ${describeDataLocation()}`);
+      console.log(`ADMIN code configured: ${maskSecret(credentials.adminCode)}`);
+      console.log(`Manager accounts configured: ${credentials.managerAccounts.length}`);
+      console.log(`Schema version: ${SCHEMA_VERSION}`);
+      for (const url of getLanUrls()) {
+        console.log(`Open: ${url}`);
+      }
+    });
+  } catch (error) {
+    console.error("Unable to start Glass ledger app.");
+    console.error(error.message || error);
+    process.exit(1);
   }
-});
+}
+
+startServer();
