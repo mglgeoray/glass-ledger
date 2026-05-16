@@ -14,7 +14,7 @@ const PORT = Number(process.env.PORT || 3187);
 const HOST = process.env.HOST || "0.0.0.0";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const ONE_MB = 1024 * 1024;
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const DEFAULT_ADMIN_CODE = "Sun60077779";
 const DEFAULT_MANAGER_CODE = "viewer123";
 const DEFAULT_EDITOR_CODE = "editor123";
@@ -151,6 +151,7 @@ function buildDefaultStore() {
     importBatches: [],
     damageRecords: [],
     materialPurchases: [],
+    salaryRecords: [],
   };
 }
 
@@ -477,6 +478,35 @@ function normalizeStoredMaterialPurchase(rawPurchase) {
   };
 }
 
+function normalizeStoredSalaryRecord(rawRecord) {
+  if (!rawRecord || typeof rawRecord !== "object") {
+    return null;
+  }
+
+  const amount = toMoneyNumber(rawRecord.amount ?? 0);
+  const date = String(rawRecord.date || "").trim();
+  const employeeName = String(rawRecord.employeeName || "").trim();
+  const role = String(rawRecord.role || "").trim();
+  const period = String(rawRecord.period || "").trim();
+  const note = String(rawRecord.note || "").trim();
+
+  if (!employeeName || !isIsoDate(date) || amount === null || amount <= 0) {
+    return null;
+  }
+
+  return {
+    id: String(rawRecord.id || crypto.randomUUID()),
+    date,
+    employeeName,
+    role,
+    period,
+    amount,
+    note,
+    createdAt: String(rawRecord.createdAt || new Date().toISOString()),
+    updatedAt: String(rawRecord.updatedAt || rawRecord.createdAt || new Date().toISOString()),
+  };
+}
+
 function getSortedProductDefaults() {
   return buildDefaultStore().products;
 }
@@ -569,6 +599,9 @@ function normalizeStore(store) {
       : [],
     materialPurchases: Array.isArray(store?.materialPurchases)
       ? store.materialPurchases.map(normalizeStoredMaterialPurchase).filter(Boolean)
+      : [],
+    salaryRecords: Array.isArray(store?.salaryRecords)
+      ? store.salaryRecords.map(normalizeStoredSalaryRecord).filter(Boolean)
       : [],
   };
 }
@@ -871,6 +904,14 @@ function sortMaterialPurchases(purchases) {
   });
 }
 
+function sortSalaryRecords(records) {
+  return [...records].sort((left, right) => {
+    const leftKey = `${left.date}|${left.updatedAt}|${left.id}`;
+    const rightKey = `${right.date}|${right.updatedAt}|${right.id}`;
+    return rightKey.localeCompare(leftKey);
+  });
+}
+
 function sortManagerAccounts(managerAccounts) {
   return [...managerAccounts].sort((left, right) => {
     const leftKey = `${left.name}|${left.updatedAt}|${left.id}`;
@@ -953,7 +994,9 @@ function getProfitSummaryForProduct(store, productId) {
   const soldCost = pieceCost * stats.soldPieces;
   const damageCost = pieceCost * stats.damagedPieces;
   const remainingCost = pieceCost * stats.remainingPieces;
-  const netProfit = stats.billed - soldCost - damageCost;
+  const grossProfit = stats.billed - soldCost - damageCost;
+  const salaryExpense = getAllocatedSalaryExpense(store, productId);
+  const netProfit = grossProfit - salaryExpense;
   const marginPercent = stats.billed > 0 ? (netProfit / stats.billed) * 100 : 0;
 
   return {
@@ -963,9 +1006,57 @@ function getProfitSummaryForProduct(store, productId) {
     soldCost: Number(soldCost.toFixed(2)),
     damageCost: Number(damageCost.toFixed(2)),
     remainingCost: Number(remainingCost.toFixed(2)),
+    grossProfit: Number(grossProfit.toFixed(2)),
+    salaryExpense: Number(salaryExpense.toFixed(2)),
     netProfit: Number(netProfit.toFixed(2)),
     marginPercent: Number(marginPercent.toFixed(2)),
     billed: stats.billed,
+  };
+}
+
+function getSalaryExpenseTotal(store) {
+  return Number(
+    (Array.isArray(store.salaryRecords) ? store.salaryRecords : [])
+      .reduce((sum, record) => sum + Number(record.amount || 0), 0)
+      .toFixed(2),
+  );
+}
+
+function getTotalBilledAmount(store) {
+  return Number(store.entries.reduce((sum, entry) => sum + Number(entry.totalAmount || 0), 0).toFixed(2));
+}
+
+function getAllocatedSalaryExpense(store, productId) {
+  const salaryExpense = getSalaryExpenseTotal(store);
+  const totalBilled = getTotalBilledAmount(store);
+  if (!salaryExpense || !totalBilled) {
+    return 0;
+  }
+
+  const productBilled = store.entries
+    .filter((entry) => entry.productId === productId)
+    .reduce((sum, entry) => sum + Number(entry.totalAmount || 0), 0);
+
+  return Number(((salaryExpense * productBilled) / totalBilled).toFixed(2));
+}
+
+function buildBusinessSummary(store) {
+  const inventoryStats = store.products.map((product) => getInventoryStatsForProduct(store, product.id));
+  const billed = Number(inventoryStats.reduce((sum, stats) => sum + Number(stats.billed || 0), 0).toFixed(2));
+  const collected = Number(inventoryStats.reduce((sum, stats) => sum + Number(stats.collected || 0), 0).toFixed(2));
+  const receivable = Number(inventoryStats.reduce((sum, stats) => sum + Number(stats.receivable || 0), 0).toFixed(2));
+  const profitSummaries = store.products.map((product) => getProfitSummaryForProduct(store, product.id));
+  const grossProfit = Number(profitSummaries.reduce((sum, summary) => sum + Number(summary.grossProfit || 0), 0).toFixed(2));
+  const salaryExpense = getSalaryExpenseTotal(store);
+  const netProfit = Number((grossProfit - salaryExpense).toFixed(2));
+
+  return {
+    billed,
+    collected,
+    receivable,
+    grossProfit,
+    salaryExpense,
+    netProfit,
   };
 }
 
@@ -1241,6 +1332,36 @@ function validateMaterialPurchase(payload) {
   };
 }
 
+function validateSalaryRecord(payload) {
+  const date = String(payload.date || "").trim();
+  const employeeName = String(payload.employeeName || "").trim();
+  const role = String(payload.role || "").trim();
+  const period = String(payload.period || "").trim();
+  const note = String(payload.note || "").trim();
+  const amount = toMoneyNumber(payload.amount ?? 0);
+
+  if (!isIsoDate(date)) {
+    throw new Error("Цалингийн огноог зөв оруулна уу.");
+  }
+
+  if (!employeeName) {
+    throw new Error("Ажилтны нэрийг оруулна уу.");
+  }
+
+  if (amount === null || amount <= 0) {
+    throw new Error("Цалингийн дүн 0-ээс их байх ёстой.");
+  }
+
+  return {
+    date,
+    employeeName,
+    role,
+    period,
+    amount,
+    note,
+  };
+}
+
 function validateProduct(payload, store, existingProductId) {
   const name = normalizeProductName(payload.name);
   const defaultPiecesPerCrate = toPositiveInteger(payload.defaultPiecesPerCrate ?? payload.piecesPerCrate);
@@ -1368,8 +1489,10 @@ function buildBootstrapPayload(sessionOrRole, store, credentials) {
     importBatches: isAdmin ? sortImportBatches(store.importBatches) : [],
     damageRecords: isAdmin ? sortDamageRecords(store.damageRecords) : [],
     materialPurchases: canViewLedger ? sortMaterialPurchases(store.materialPurchases) : [],
+    salaryRecords: isAdmin ? sortSalaryRecords(store.salaryRecords) : [],
     inventoryStats: canViewLedger ? buildInventoryStatsMap(store) : {},
     profitSummaries: isAdmin ? buildProfitSummariesMap(store) : {},
+    businessSummary: isAdmin ? buildBusinessSummary(store) : {},
     defaults: {
       adminLabel: "ADMIN",
       managerLabel: "Худалдааны менежер",
@@ -1909,6 +2032,75 @@ async function handleApiRequest(request, response, url) {
 
     if (store.materialPurchases.length === initialLength) {
       sendError(response, 404, "Устгах худалдан авалтын мөр олдсонгүй.");
+      return;
+    }
+
+    await persistStore();
+    await sendEditorPayload(response, session, store);
+    return;
+  }
+
+  if (request.method === "POST" && pathname === "/api/salary-records") {
+    const session = await requireAuthenticatedRole(request, response, ["admin"]);
+    if (!session) {
+      return;
+    }
+
+    const body = await readRequestBody(request);
+    const salaryRecord = asBadRequest(() => validateSalaryRecord(body));
+    const timestamp = new Date().toISOString();
+
+    store.salaryRecords.push({
+      id: crypto.randomUUID(),
+      ...salaryRecord,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    await persistStore();
+    await sendEditorPayload(response, session, store, 201);
+    return;
+  }
+
+  if (request.method === "PUT" && pathname.startsWith("/api/salary-records/")) {
+    const session = await requireAuthenticatedRole(request, response, ["admin"]);
+    if (!session) {
+      return;
+    }
+
+    const salaryId = decodeURIComponent(pathname.replace("/api/salary-records/", ""));
+    const salaryIndex = store.salaryRecords.findIndex((record) => record.id === salaryId);
+    if (salaryIndex === -1) {
+      sendError(response, 404, "Цалингийн бүртгэл олдсонгүй.");
+      return;
+    }
+
+    const body = await readRequestBody(request);
+    const salaryRecord = asBadRequest(() => validateSalaryRecord(body));
+
+    store.salaryRecords[salaryIndex] = {
+      ...store.salaryRecords[salaryIndex],
+      ...salaryRecord,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await persistStore();
+    await sendEditorPayload(response, session, store);
+    return;
+  }
+
+  if (request.method === "DELETE" && pathname.startsWith("/api/salary-records/")) {
+    const session = await requireAuthenticatedRole(request, response, ["admin"]);
+    if (!session) {
+      return;
+    }
+
+    const salaryId = decodeURIComponent(pathname.replace("/api/salary-records/", ""));
+    const initialLength = store.salaryRecords.length;
+    store.salaryRecords = store.salaryRecords.filter((record) => record.id !== salaryId);
+
+    if (store.salaryRecords.length === initialLength) {
+      sendError(response, 404, "Устгах цалингийн мөр олдсонгүй.");
       return;
     }
 

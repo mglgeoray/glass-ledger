@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260516f" />
+    <link rel="stylesheet" href="/styles.css?v=20260517a" />
   </head>
   <body>
     <div class="grain"></div>
@@ -198,6 +198,14 @@
               <article class="mini-card">
                 <span>Үлдэгдэл нөөцийн өртөг</span>
                 <strong id="remainingCostValue">0 ₮</strong>
+              </article>
+              <article class="mini-card">
+                <span>Цалингийн өмнөх ашиг</span>
+                <strong id="grossProfitValue">0 ₮</strong>
+              </article>
+              <article class="mini-card warning">
+                <span>Цалингийн зардал</span>
+                <strong id="salaryExpenseValue">0 ₮</strong>
               </article>
               <article class="mini-card accent">
                 <span>Цэвэр ашиг</span>
@@ -477,6 +485,82 @@
             </div>
           </article>
 
+          <article class="finance-card span-2" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">ЦАЛИНГИЙН БҮРТГЭЛ</p>
+                <h3>Ажилтны цалин бүртгэх</h3>
+                <p class="finance-card-copy">
+                  Энд бүртгэсэн цалин нийт ашиг, алдагдлын тооцоонд үйл ажиллагааны зардлаар орно. Бүтээгдэхүүн тус бүрт борлуулалтын дүнгээр хувь тэнцүүлэн шингээгдэнэ.
+                </p>
+              </div>
+            </div>
+
+            <form id="salaryForm" class="purchase-form">
+              <input id="salaryRecordId" name="salaryRecordId" type="hidden" />
+
+              <div class="form-grid">
+                <label>
+                  Огноо
+                  <input id="salaryDateInput" name="date" type="date" required />
+                </label>
+
+                <label>
+                  Ажилтны нэр
+                  <input id="salaryEmployeeInput" name="employeeName" type="text" placeholder="Жишээ: Нараа" required />
+                </label>
+
+                <label>
+                  Албан тушаал
+                  <input id="salaryRoleInput" name="role" type="text" placeholder="Жишээ: Борлуулагч" />
+                </label>
+
+                <label>
+                  Хугацаа
+                  <input id="salaryPeriodInput" name="period" type="text" placeholder="Жишээ: 2026-05" />
+                </label>
+
+                <label>
+                  Цалингийн дүн
+                  <input id="salaryAmountInput" name="amount" type="number" min="0" step="0.01" placeholder="0" required />
+                </label>
+
+                <label class="wide">
+                  Тэмдэглэл
+                  <textarea id="salaryNoteInput" name="note" rows="3" placeholder="Нэмэлт тайлбар"></textarea>
+                </label>
+              </div>
+
+              <p class="form-message" id="salaryMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" id="saveSalaryButton" type="submit">Цалин хадгалах</button>
+                <button class="ghost-button" id="resetSalaryButton" type="button">Цэвэрлэх</button>
+              </div>
+            </form>
+
+            <div class="soft-summary warning">
+              <span id="salarySummaryText">Нийт 0 мөр · 0 ₮ · Цалингийн дараах ашиг 0 ₮</span>
+            </div>
+
+            <div class="table-scroll small-table-scroll">
+              <table class="secondary-table">
+                <thead>
+                  <tr>
+                    <th>Огноо</th>
+                    <th>Ажилтан</th>
+                    <th>Албан тушаал</th>
+                    <th>Хугацаа</th>
+                    <th>Дүн (₮)</th>
+                    <th>Тэмдэглэл</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="salaryTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
           <article class="finance-card span-2">
             <div class="finance-card-header">
               <div>
@@ -733,6 +817,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260516f" defer></script>
+    <script src="/app.js?v=20260517a" defer></script>
   </body>
 </html>

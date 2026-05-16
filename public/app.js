@@ -11,8 +11,10 @@ const state = {
   importBatches: [],
   damageRecords: [],
   materialPurchases: [],
+  salaryRecords: [],
   inventoryStats: {},
   profitSummaries: {},
+  businessSummary: {},
   activeProductId: null,
 };
 
@@ -51,6 +53,7 @@ const elements = {
   formPaidAmount: document.querySelector("#formPaidAmount"),
   formReceivableAmount: document.querySelector("#formReceivableAmount"),
   formTotalAmount: document.querySelector("#formTotalAmount"),
+  grossProfitValue: document.querySelector("#grossProfitValue"),
   importedCostValue: document.querySelector("#importedCostValue"),
   importedValue: document.querySelector("#importedValue"),
   importBatchForm: document.querySelector("#importBatchForm"),
@@ -125,8 +128,21 @@ const elements = {
   resetManagerButton: document.querySelector("#resetManagerButton"),
   resetProductButton: document.querySelector("#resetProductButton"),
   resetPurchaseButton: document.querySelector("#resetPurchaseButton"),
+  resetSalaryButton: document.querySelector("#resetSalaryButton"),
   roleChip: document.querySelector("#roleChip"),
+  salaryAmountInput: document.querySelector("#salaryAmountInput"),
+  salaryDateInput: document.querySelector("#salaryDateInput"),
+  salaryEmployeeInput: document.querySelector("#salaryEmployeeInput"),
+  salaryForm: document.querySelector("#salaryForm"),
+  salaryMessage: document.querySelector("#salaryMessage"),
+  salaryNoteInput: document.querySelector("#salaryNoteInput"),
+  salaryPeriodInput: document.querySelector("#salaryPeriodInput"),
+  salaryRecordId: document.querySelector("#salaryRecordId"),
+  salaryRoleInput: document.querySelector("#salaryRoleInput"),
+  salarySummaryText: document.querySelector("#salarySummaryText"),
+  salaryTableBody: document.querySelector("#salaryTableBody"),
   saveEntryButton: document.querySelector("#saveEntryButton"),
+  salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
   taxCostInput: document.querySelector("#taxCostInput"),
@@ -156,6 +172,7 @@ function bindEvents() {
   elements.resetManagerButton.addEventListener("click", () => resetManagerAccountForm(true));
   elements.resetProductButton.addEventListener("click", () => resetProductForm(true));
   elements.resetPurchaseButton.addEventListener("click", () => resetMaterialPurchaseForm(true));
+  elements.resetSalaryButton.addEventListener("click", () => resetSalaryForm(true));
 
   elements.entryModal.addEventListener("click", (event) => {
     if (event.target === elements.entryModal) {
@@ -191,6 +208,8 @@ function bindEvents() {
   elements.productTableBody.addEventListener("click", handleProductTableAction);
   elements.materialPurchaseForm.addEventListener("submit", handleMaterialPurchaseSubmit);
   elements.materialPurchaseTableBody.addEventListener("click", handleMaterialPurchaseTableAction);
+  elements.salaryForm.addEventListener("submit", handleSalarySubmit);
+  elements.salaryTableBody.addEventListener("click", handleSalaryTableAction);
 
   for (const input of [elements.productSelect, elements.quantityInput, elements.unitPriceInput, elements.dateInput]) {
     input.addEventListener("input", updateFormSummary);
@@ -254,8 +273,10 @@ function applyBootstrapPayload(payload) {
   state.importBatches = payload.importBatches || [];
   state.damageRecords = payload.damageRecords || [];
   state.materialPurchases = payload.materialPurchases || [];
+  state.salaryRecords = payload.salaryRecords || [];
   state.inventoryStats = payload.inventoryStats || {};
   state.profitSummaries = payload.profitSummaries || {};
+  state.businessSummary = payload.businessSummary || {};
 
   if (!state.products.length) {
     state.activeProductId = null;
@@ -506,6 +527,7 @@ function renderEditorPanels() {
   renderManagerAccounts();
   renderImportBatchTable();
   renderDamageTable();
+  renderSalaryTable();
 
   if (!elements.productIdInput.value) {
     resetProductForm(false);
@@ -527,6 +549,10 @@ function renderEditorPanels() {
 
   if (!elements.purchaseDateInput.value) {
     resetMaterialPurchaseForm(false);
+  }
+
+  if (!elements.salaryDateInput.value) {
+    resetSalaryForm(false);
   }
 }
 
@@ -572,6 +598,8 @@ function renderProfitPanel() {
   elements.soldCostValue.textContent = `${formatMoney(summary.soldCost)} ₮`;
   elements.damageCostValue.textContent = `${formatMoney(summary.damageCost)} ₮`;
   elements.remainingCostValue.textContent = `${formatMoney(summary.remainingCost)} ₮`;
+  elements.grossProfitValue.textContent = `${formatMoney(summary.grossProfit)} ₮`;
+  elements.salaryExpenseValue.textContent = `${formatMoney(summary.salaryExpense)} ₮`;
   elements.netProfitValue.textContent = `${formatMoney(summary.netProfit)} ₮`;
   elements.netProfitValue.style.color = summary.netProfit < 0 ? "var(--danger)" : "var(--accent)";
   elements.profitMarginValue.textContent = `${summary.marginPercent.toFixed(1)}%`;
@@ -588,13 +616,15 @@ function renderProfitPanel() {
   } else if (summary.damageCost > 0) {
     elements.profitHint.textContent = `Борлуулалтын дүнгээс ${formatMoney(summary.soldCost)} ₮ борлуулсан өртөг, ${formatMoney(
       summary.damageCost,
-    )} ₮ гэмтлийн өртөг хасагдаж, цэвэр ашиг ${formatMoney(summary.netProfit)} ₮ болж байна.`;
+    )} ₮ гэмтлийн өртөг, ${formatMoney(summary.salaryExpense)} ₮ цалингийн зардал хасагдаж, цэвэр ашиг ${formatMoney(summary.netProfit)} ₮ болж байна.`;
   } else if (summary.netProfit >= 0) {
-    elements.profitHint.textContent = `Одоогийн борлуулалтаар ${formatMoney(summary.netProfit)} ₮ ашигтай байна. Үлдэгдэл нөөцийн өртөг ${formatMoney(
+    elements.profitHint.textContent = `Одоогийн борлуулалтаар ${formatMoney(summary.netProfit)} ₮ цэвэр ашигтай байна. Цалин ${formatMoney(
+      summary.salaryExpense,
+    )} ₮-өөр хувь тэнцүүлэн шингэсэн. Үлдэгдэл нөөцийн өртөг ${formatMoney(
       summary.remainingCost,
     )} ₮ гэж тооцогдож байна.`;
   } else {
-    elements.profitHint.textContent = `Одоогийн борлуулалтаар ${formatMoney(Math.abs(summary.netProfit))} ₮ алдагдалтай байна. Импортын өртөг болон борлуулалтын үнээ шалгана уу.`;
+    elements.profitHint.textContent = `Одоогийн борлуулалтаар ${formatMoney(Math.abs(summary.netProfit))} ₮ алдагдалтай байна. Импортын өртөг, цалин болон борлуулалтын үнээ шалгана уу.`;
   }
 }
 
@@ -746,6 +776,40 @@ function renderMaterialPurchaseTable() {
     .join("");
 }
 
+function renderSalaryTable() {
+  const records = getSalaryRecords();
+  const totalAmount = records.reduce((sum, record) => sum + Number(record.amount || 0), 0);
+  const netProfit = Number(state.businessSummary?.netProfit || 0);
+  elements.salarySummaryText.textContent = `Нийт ${records.length} мөр · ${formatMoney(totalAmount)} ₮ · Цалингийн дараах ашиг ${formatMoney(netProfit)} ₮`;
+
+  if (!records.length) {
+    elements.salaryTableBody.innerHTML =
+      '<tr class="empty-state"><td colspan="7">Цалингийн бүртгэл одоогоор алга байна.</td></tr>';
+    return;
+  }
+
+  elements.salaryTableBody.innerHTML = records
+    .map(
+      (record) => `
+        <tr>
+          <td>${escapeHtml(record.date)}</td>
+          <td>${escapeHtml(record.employeeName)}</td>
+          <td>${escapeHtml(record.role || "—")}</td>
+          <td>${escapeHtml(record.period || "—")}</td>
+          <td class="money-cell">${formatMoney(record.amount)}</td>
+          <td>${escapeHtml(record.note || "—")}</td>
+          <td>
+            <div class="row-actions">
+              <button class="inline-button" type="button" data-action="edit-salary" data-salary-id="${record.id}">Засах</button>
+              <button class="inline-button danger" type="button" data-action="delete-salary" data-salary-id="${record.id}">Устгах</button>
+            </div>
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
 function renderEntryTable() {
   const product = getActiveProduct();
   if (!product) {
@@ -863,6 +927,8 @@ function buildEmptyProfitSummary() {
     soldCost: 0,
     damageCost: 0,
     remainingCost: 0,
+    grossProfit: 0,
+    salaryExpense: 0,
     netProfit: 0,
     marginPercent: 0,
     billed: 0,
@@ -919,6 +985,14 @@ function getMaterialPurchases() {
   });
 }
 
+function getSalaryRecords() {
+  return [...state.salaryRecords].sort((left, right) => {
+    const leftKey = `${left.date}|${left.updatedAt}|${left.id}`;
+    const rightKey = `${right.date}|${right.updatedAt}|${right.id}`;
+    return rightKey.localeCompare(leftKey);
+  });
+}
+
 function getImportBatchTotalCost(batch) {
   return (
     Number(batch.importCost || 0) +
@@ -927,6 +1001,14 @@ function getImportBatchTotalCost(batch) {
     Number(batch.wageCost || 0) +
     Number(batch.otherCost || 0)
   );
+}
+
+function getTodayDateValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getEntryPayments(entry) {
@@ -945,7 +1027,7 @@ function createPaymentDraft(payment = {}) {
   paymentDraftSeed += 1;
   return {
     id: payment.id || `payment-draft-${paymentDraftSeed}`,
-    date: payment.date || elements.dateInput.value || new Date().toISOString().slice(0, 10),
+    date: payment.date || elements.dateInput.value || getTodayDateValue(),
     method: payment.method || "cash",
     amount: payment.amount ?? "",
     note: payment.note || "",
@@ -1047,7 +1129,7 @@ function openNewEntryModal() {
     return;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayDateValue();
   elements.entryForm.reset();
   elements.entryId.value = "";
   elements.modalTitle.textContent = "Шинэ мөр нэмэх";
@@ -1122,7 +1204,7 @@ function resetImportForm(clearMessage) {
   const activeProduct = getActiveProduct();
   elements.importBatchForm.reset();
   elements.importBatchId.value = "";
-  elements.importDateInput.value = new Date().toISOString().slice(0, 10);
+  elements.importDateInput.value = getTodayDateValue();
   elements.importPiecesPerCrateInput.value = activeProduct?.defaultPiecesPerCrate || 82;
   if (clearMessage) {
     setInlineMessage(elements.importMessage, "", false);
@@ -1192,7 +1274,7 @@ function openDamageEdit(damageId) {
 function resetDamageForm(clearMessage) {
   elements.damageForm.reset();
   elements.damageRecordId.value = "";
-  elements.damageDateInput.value = new Date().toISOString().slice(0, 10);
+  elements.damageDateInput.value = getTodayDateValue();
   elements.damageReasonInput.value = "broken";
   if (clearMessage) {
     setInlineMessage(elements.damageMessage, "", false);
@@ -1202,7 +1284,7 @@ function resetDamageForm(clearMessage) {
 function resetMaterialPurchaseForm(clearMessage) {
   elements.materialPurchaseForm.reset();
   elements.materialPurchaseId.value = "";
-  elements.purchaseDateInput.value = new Date().toISOString().slice(0, 10);
+  elements.purchaseDateInput.value = getTodayDateValue();
   if (clearMessage) {
     setInlineMessage(elements.purchaseMessage, "", false);
   }
@@ -1224,9 +1306,34 @@ function openMaterialPurchaseEdit(purchaseId) {
   setInlineMessage(elements.purchaseMessage, "", false);
 }
 
+function resetSalaryForm(clearMessage) {
+  elements.salaryForm.reset();
+  elements.salaryRecordId.value = "";
+  elements.salaryDateInput.value = getTodayDateValue();
+  if (clearMessage) {
+    setInlineMessage(elements.salaryMessage, "", false);
+  }
+}
+
+function openSalaryEdit(salaryId) {
+  const record = state.salaryRecords.find((item) => item.id === salaryId);
+  if (!record) {
+    return;
+  }
+
+  elements.salaryRecordId.value = record.id;
+  elements.salaryDateInput.value = record.date;
+  elements.salaryEmployeeInput.value = record.employeeName;
+  elements.salaryRoleInput.value = record.role || "";
+  elements.salaryPeriodInput.value = record.period || "";
+  elements.salaryAmountInput.value = record.amount;
+  elements.salaryNoteInput.value = record.note || "";
+  setInlineMessage(elements.salaryMessage, "", false);
+}
+
 function handleAddPaymentPart() {
   const drafts = readPaymentDraftsFromDom();
-  drafts.push(createPaymentDraft({ date: elements.dateInput.value || new Date().toISOString().slice(0, 10) }));
+  drafts.push(createPaymentDraft({ date: elements.dateInput.value || getTodayDateValue() }));
   renderPaymentRows(drafts);
   updateFormSummary();
 }
@@ -1515,6 +1622,37 @@ async function handleMaterialPurchaseSubmit(event) {
   }
 }
 
+async function handleSalarySubmit(event) {
+  event.preventDefault();
+  setInlineMessage(elements.salaryMessage, "", false);
+
+  const payload = {
+    date: elements.salaryDateInput.value,
+    employeeName: elements.salaryEmployeeInput.value.trim(),
+    role: elements.salaryRoleInput.value.trim(),
+    period: elements.salaryPeriodInput.value.trim(),
+    amount: elements.salaryAmountInput.value,
+    note: elements.salaryNoteInput.value.trim(),
+  };
+
+  const salaryId = elements.salaryRecordId.value.trim();
+  const endpoint = salaryId ? `/api/salary-records/${salaryId}` : "/api/salary-records";
+  const method = salaryId ? "PUT" : "POST";
+
+  try {
+    const payloadResponse = await apiFetch(endpoint, {
+      method,
+      body: JSON.stringify(payload),
+    });
+
+    applyBootstrapPayload(payloadResponse);
+    resetSalaryForm(false);
+    setInlineMessage(elements.salaryMessage, "Цалингийн мөр хадгалагдлаа.", false, true);
+  } catch (error) {
+    setInlineMessage(elements.salaryMessage, error.message, true);
+  }
+}
+
 async function handleManagerTableAction(event) {
   const button = event.target.closest("[data-action]");
   if (!button) {
@@ -1690,6 +1828,36 @@ async function handleMaterialPurchaseTableAction(event) {
       resetMaterialPurchaseForm(false);
     } catch (error) {
       setInlineMessage(elements.purchaseMessage, error.message, true);
+    }
+  }
+}
+
+async function handleSalaryTableAction(event) {
+  const button = event.target.closest("[data-action]");
+  if (!button) {
+    return;
+  }
+
+  const action = button.dataset.action;
+  const salaryId = button.dataset.salaryId;
+
+  if (action === "edit-salary" && salaryId) {
+    openSalaryEdit(salaryId);
+    return;
+  }
+
+  if (action === "delete-salary" && salaryId) {
+    const accepted = window.confirm("Энэ цалингийн мөрийг устгахдаа итгэлтэй байна уу?");
+    if (!accepted) {
+      return;
+    }
+
+    try {
+      const payload = await apiFetch(`/api/salary-records/${salaryId}`, { method: "DELETE" });
+      applyBootstrapPayload(payload);
+      resetSalaryForm(false);
+    } catch (error) {
+      setInlineMessage(elements.salaryMessage, error.message, true);
     }
   }
 }
