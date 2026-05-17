@@ -813,7 +813,7 @@ function renderSalaryTable() {
 
 function renderEntryTable() {
   const product = getActiveProduct();
-  const visibleColumnCount = isManager() ? 9 : 13;
+  const visibleColumnCount = isManager() ? 10 : 13;
   if (!product) {
     elements.entryTableBody.innerHTML =
       `<tr class="empty-state"><td colspan="${visibleColumnCount}">Бүтээгдэхүүний мэдээлэл байхгүй байна.</td></tr>`;
@@ -862,10 +862,10 @@ function renderEntryTable() {
               : `
           <td class="money-cell">${formatMoney(entry.totalAmount)}</td>
           <td class="money-cell">${formatMoney(paidAmount)}</td>
-          <td class="balance-cell ${receivableAmount <= 0 ? "is-settled" : ""}">${formatMoney(receivableAmount)}</td>
-          <td>${renderPaymentBreakdown(entry)}</td>
           `
           }
+          <td class="balance-cell ${receivableAmount <= 0 ? "is-settled" : ""}">${formatMoney(receivableAmount)}</td>
+          ${isManager() ? "" : `<td>${renderPaymentBreakdown(entry)}</td>`}
           <td>${escapeHtml(entry.crateLabel || "—")}</td>
           <td>${escapeHtml(entry.note || "—")}</td>
           <td>${actionCell}</td>
