@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517h" />
+    <link rel="stylesheet" href="/styles.css?v=20260517j" />
   </head>
   <body>
     <div class="grain"></div>
@@ -147,6 +147,27 @@
             <div class="alert-list" id="attentionList"></div>
           </article>
         </div>
+
+        <article class="dashboard-subpanel customer-panel">
+          <div class="subpanel-header">
+            <h3>Харилцагчийн бүртгэл</h3>
+            <span id="customerSummaryText">Харилцагч алга байна.</span>
+          </div>
+          <div class="table-scroll compact-table-scroll">
+            <table class="compact-table">
+              <thead>
+                <tr>
+                  <th>Харилцагч</th>
+                  <th>Нийт худалдан авалт</th>
+                  <th>Төлсөн</th>
+                  <th>Авлага</th>
+                  <th>Сүүлийн огноо</th>
+                </tr>
+              </thead>
+              <tbody id="customerTableBody"></tbody>
+            </table>
+          </div>
+        </article>
       </section>
 
       <section class="summary-grid" id="summaryGrid">
@@ -275,6 +296,63 @@
                 <tbody id="productTableBody"></tbody>
               </table>
             </div>
+          </article>
+
+          <article class="finance-card span-2" data-admin-only="true">
+            <div class="finance-card-header">
+              <div>
+                <p class="finance-card-eyebrow">БАРИМТЫН ТОХИРГОО</p>
+                <h3>Компанийн мэдээлэл</h3>
+                <p class="finance-card-copy">
+                  Борлуулалтын мөрөөс хэвлэх баримт дээр гарах нэр, утас, данс, QR болон footer тэмдэглэлийг энд тохируулна.
+                </p>
+              </div>
+            </div>
+
+            <form id="invoiceSettingsForm" class="purchase-form">
+              <div class="form-grid">
+                <label>
+                  Компанийн нэр
+                  <input id="invoiceCompanyNameInput" name="companyName" type="text" placeholder="Жишээ: Шилний данс" required />
+                </label>
+
+                <label>
+                  Утас
+                  <input id="invoicePhoneInput" name="phone" type="text" placeholder="Жишээ: 99112233" />
+                </label>
+
+                <label>
+                  Банк
+                  <input id="invoiceBankNameInput" name="bankName" type="text" placeholder="Жишээ: Хаан банк" />
+                </label>
+
+                <label>
+                  Данс
+                  <input id="invoiceBankAccountInput" name="bankAccount" type="text" placeholder="Жишээ: 5000000000" />
+                </label>
+
+                <label>
+                  Лого үсэг
+                  <input id="invoiceLogoTextInput" name="logoText" type="text" maxlength="6" placeholder="ШД" />
+                </label>
+
+                <label>
+                  QR мэдээлэл
+                  <input id="invoiceQrTextInput" name="qrText" type="text" placeholder="Данс, QPay холбоос эсвэл төлбөрийн тайлбар" />
+                </label>
+
+                <label class="wide">
+                  Footer тэмдэглэл
+                  <textarea id="invoiceFooterNoteInput" name="footerNote" rows="2" placeholder="Худалдан авалт хийсэнд баярлалаа."></textarea>
+                </label>
+              </div>
+
+              <p class="form-message" id="invoiceSettingsMessage"></p>
+
+              <div class="finance-actions">
+                <button class="primary-button" type="submit">Баримтын тохиргоо хадгалах</button>
+              </div>
+            </form>
           </article>
 
           <article class="finance-card span-2" data-admin-only="true">
@@ -929,6 +1007,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517h" defer></script>
+    <script src="/app.js?v=20260517j" defer></script>
   </body>
 </html>

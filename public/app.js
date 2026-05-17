@@ -12,6 +12,7 @@ const state = {
   damageRecords: [],
   materialPurchases: [],
   salaryRecords: [],
+  invoiceSettings: {},
   inventoryStats: {},
   profitSummaries: {},
   businessSummary: {},
@@ -30,6 +31,8 @@ const elements = {
   closeModalButton: document.querySelector("#closeModalButton"),
   collectedValue: document.querySelector("#collectedValue"),
   customerInput: document.querySelector("#customerInput"),
+  customerSummaryText: document.querySelector("#customerSummaryText"),
+  customerTableBody: document.querySelector("#customerTableBody"),
   damageDateInput: document.querySelector("#damageDateInput"),
   damageForm: document.querySelector("#damageForm"),
   damageMessage: document.querySelector("#damageMessage"),
@@ -91,6 +94,15 @@ const elements = {
   importSupplierInput: document.querySelector("#importSupplierInput"),
   importTotalCostPreview: document.querySelector("#importTotalCostPreview"),
   importTotalPiecesPreview: document.querySelector("#importTotalPiecesPreview"),
+  invoiceBankAccountInput: document.querySelector("#invoiceBankAccountInput"),
+  invoiceBankNameInput: document.querySelector("#invoiceBankNameInput"),
+  invoiceCompanyNameInput: document.querySelector("#invoiceCompanyNameInput"),
+  invoiceFooterNoteInput: document.querySelector("#invoiceFooterNoteInput"),
+  invoiceLogoTextInput: document.querySelector("#invoiceLogoTextInput"),
+  invoicePhoneInput: document.querySelector("#invoicePhoneInput"),
+  invoiceQrTextInput: document.querySelector("#invoiceQrTextInput"),
+  invoiceSettingsForm: document.querySelector("#invoiceSettingsForm"),
+  invoiceSettingsMessage: document.querySelector("#invoiceSettingsMessage"),
   loginCode: document.querySelector("#loginCode"),
   loginForm: document.querySelector("#loginForm"),
   loginMessage: document.querySelector("#loginMessage"),
@@ -185,8 +197,40 @@ const elements = {
   attentionSummaryText: document.querySelector("#attentionSummaryText"),
 };
 
+const collapsiblePanels = [
+  {
+    id: "dashboard",
+    selector: "#dashboardPanel",
+    headerSelector: ".dashboard-header",
+    title: "Удирдлагын самбар",
+  },
+  {
+    id: "summary",
+    selector: "#summaryGrid",
+    title: "Товч үзүүлэлт",
+  },
+  {
+    id: "progress",
+    selector: ".progress-card",
+    headerSelector: ".progress-header",
+    title: "Борлуулалтын явц",
+  },
+  {
+    id: "editor",
+    selector: "#editorZone",
+    headerSelector: ".editor-zone-header",
+    title: "Санхүүгийн хэсэг",
+  },
+  {
+    id: "entries",
+    selector: ".table-card",
+    title: "Борлуулалтын жагсаалт",
+  },
+];
+
 document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
+  initializeCollapsiblePanels();
   refreshBootstrap();
 });
 
@@ -242,6 +286,8 @@ function bindEvents() {
   elements.materialPurchaseTableBody.addEventListener("click", handleMaterialPurchaseTableAction);
   elements.salaryForm.addEventListener("submit", handleSalarySubmit);
   elements.salaryTableBody.addEventListener("click", handleSalaryTableAction);
+  elements.invoiceSettingsForm?.addEventListener("submit", handleInvoiceSettingsSubmit);
+  document.addEventListener("click", handlePanelToggleClick);
 
   for (const input of [elements.productSelect, elements.quantityInput, elements.unitPriceInput, elements.dateInput]) {
     input.addEventListener("input", updateFormSummary);
@@ -263,6 +309,68 @@ function bindEvents() {
     input.addEventListener("input", updateImportPreview);
     input.addEventListener("change", updateImportPreview);
   }
+}
+
+function initializeCollapsiblePanels() {
+  for (const config of collapsiblePanels) {
+    const panel = document.querySelector(config.selector);
+    if (!panel || panel.dataset.collapsibleReady === "true") {
+      continue;
+    }
+
+    panel.dataset.collapsePanel = config.id;
+    const header = ensureCollapseHeader(panel, config);
+    const button = document.createElement("button");
+    button.className = "panel-toggle";
+    button.type = "button";
+    button.dataset.collapseToggle = config.id;
+    button.innerHTML = '<span class="panel-toggle-text">Хураах</span><span class="panel-toggle-arrow" aria-hidden="true">⌄</span>';
+    header.append(button);
+
+    const isCollapsed = localStorage.getItem(getCollapseStorageKey(config.id)) === "collapsed";
+    setPanelCollapsed(panel, button, isCollapsed);
+
+    panel.dataset.collapsibleReady = "true";
+  }
+}
+
+function handlePanelToggleClick(event) {
+  const button = event.target.closest("[data-collapse-toggle]");
+  if (!button) {
+    return;
+  }
+
+  const panel = document.querySelector(`[data-collapse-panel="${button.dataset.collapseToggle}"]`);
+  if (!panel) {
+    return;
+  }
+
+  setPanelCollapsed(panel, button, !panel.classList.contains("is-collapsed"));
+}
+
+function ensureCollapseHeader(panel, config) {
+  const existingHeader = config.headerSelector ? panel.querySelector(config.headerSelector) : null;
+  if (existingHeader) {
+    existingHeader.classList.add("panel-collapse-header");
+    return existingHeader;
+  }
+
+  const header = document.createElement("div");
+  header.className = "panel-generated-header panel-collapse-header";
+  header.innerHTML = `<h2>${escapeHtml(config.title)}</h2>`;
+  panel.prepend(header);
+  return header;
+}
+
+function setPanelCollapsed(panel, button, isCollapsed) {
+  panel.classList.toggle("is-collapsed", isCollapsed);
+  button.setAttribute("aria-expanded", String(!isCollapsed));
+  button.querySelector(".panel-toggle-text").textContent = isCollapsed ? "Дэлгэх" : "Хураах";
+  localStorage.setItem(getCollapseStorageKey(panel.dataset.collapsePanel), isCollapsed ? "collapsed" : "expanded");
+}
+
+function getCollapseStorageKey(panelId) {
+  return `glassLedger:panel:${panelId}`;
 }
 
 async function apiFetch(url, options = {}) {
@@ -306,6 +414,7 @@ function applyBootstrapPayload(payload) {
   state.damageRecords = payload.damageRecords || [];
   state.materialPurchases = payload.materialPurchases || [];
   state.salaryRecords = payload.salaryRecords || [];
+  state.invoiceSettings = payload.invoiceSettings || {};
   state.inventoryStats = payload.inventoryStats || {};
   state.profitSummaries = payload.profitSummaries || {};
   state.businessSummary = payload.businessSummary || {};
@@ -504,6 +613,7 @@ function renderDashboard() {
   renderReceivableDashboard(metrics.receivables);
   renderAgingSummary(metrics.aging);
   renderAttentionItems(metrics.attentionItems);
+  renderCustomerRegistry(metrics.customers);
 }
 
 function renderReceivableDashboard(receivables) {
@@ -555,6 +665,36 @@ function renderAttentionItems(items) {
           <strong>${escapeHtml(item.title)}</strong>
           <span>${escapeHtml(item.detail)}</span>
         </div>
+      `,
+    )
+    .join("");
+}
+
+function renderCustomerRegistry(customers) {
+  if (!elements.customerSummaryText || !elements.customerTableBody) {
+    return;
+  }
+
+  const totalReceivable = customers.reduce((sum, customer) => sum + customer.receivable, 0);
+  elements.customerSummaryText.textContent = customers.length
+    ? `${formatNumber(customers.length)} харилцагч · ${formatMoney(totalReceivable)} ₮ авлага`
+    : "Харилцагч алга байна.";
+
+  if (!customers.length) {
+    elements.customerTableBody.innerHTML = '<tr class="empty-state"><td colspan="5">Борлуулалтын мөрөөс харилцагчийн бүртгэл автоматаар үүснэ.</td></tr>';
+    return;
+  }
+
+  elements.customerTableBody.innerHTML = customers
+    .map(
+      (customer) => `
+        <tr>
+          <td>${escapeHtml(customer.name)}</td>
+          <td class="money-cell">${formatMoney(customer.total)}</td>
+          <td class="money-cell">${formatMoney(customer.paid)}</td>
+          <td class="money-cell">${formatMoney(customer.receivable)}</td>
+          <td>${escapeHtml(customer.latestDate || "—")}</td>
+        </tr>
       `,
     )
     .join("");
@@ -659,6 +799,7 @@ function renderEditorPanels() {
   renderImportBatchTable();
   renderDamageTable();
   renderSalaryTable();
+  populateInvoiceSettingsForm();
 
   if (!elements.productIdInput.value) {
     resetProductForm(false);
@@ -1287,6 +1428,7 @@ function buildDashboardMetrics() {
   const periodKeys = ["today", "week", "month", "year"];
   const periods = Object.fromEntries(periodKeys.map((key) => [key, createEmptyPeriodMetric()]));
   const receivableMap = new Map();
+  const customerMap = new Map();
   const stockAlerts = [];
   const aging = { current: 0, mid: 0, old: 0 };
   const damageByProduct = new Map();
@@ -1297,6 +1439,21 @@ function buildDashboardMetrics() {
 
   for (const entry of state.entries) {
     const totalAmount = Number(entry.totalAmount || 0);
+    const paidAmount = getEntryPaidAmount(entry);
+    const customerName = entry.customer || "Нэргүй харилцагч";
+    const customerProfile = customerMap.get(customerName) || {
+      name: customerName,
+      total: 0,
+      paid: 0,
+      receivable: 0,
+      latestDate: entry.date || "",
+    };
+    customerProfile.total += totalAmount;
+    customerProfile.paid += paidAmount;
+    customerProfile.receivable += Math.max(0, totalAmount - paidAmount);
+    customerProfile.latestDate = String(entry.date || "").localeCompare(customerProfile.latestDate) > 0 ? entry.date : customerProfile.latestDate;
+    customerMap.set(customerName, customerProfile);
+
     for (const periodKey of periodKeys) {
       if (isDateInDashboardPeriod(entry.date, periodKey, today)) {
         periods[periodKey].sales += totalAmount;
@@ -1377,6 +1534,14 @@ function buildDashboardMetrics() {
   const receivables = [...receivableMap.values()]
     .map((item) => ({ ...item, amount: Number(item.amount.toFixed(2)) }))
     .sort((left, right) => right.amount - left.amount || right.latestDate.localeCompare(left.latestDate));
+  const customers = [...customerMap.values()]
+    .map((item) => ({
+      ...item,
+      total: Number(item.total.toFixed(2)),
+      paid: Number(item.paid.toFixed(2)),
+      receivable: Number(item.receivable.toFixed(2)),
+    }))
+    .sort((left, right) => right.receivable - left.receivable || right.latestDate.localeCompare(left.latestDate));
 
   stockAlerts.sort((left, right) => left.remainingPieces - right.remainingPieces || left.productName.localeCompare(right.productName));
   const oldReceivables = receivables.filter((item) => item.maxAgeDays > 30);
@@ -1413,6 +1578,7 @@ function buildDashboardMetrics() {
     receivableTotal: Number(receivableTotal.toFixed(2)),
     receivableEntryCount,
     receivables,
+    customers,
     aging: {
       current: Number(aging.current.toFixed(2)),
       mid: Number(aging.mid.toFixed(2)),
@@ -1748,6 +1914,21 @@ function openSalaryEdit(salaryId) {
   setInlineMessage(elements.salaryMessage, "", false);
 }
 
+function populateInvoiceSettingsForm() {
+  if (!elements.invoiceSettingsForm) {
+    return;
+  }
+
+  const settings = state.invoiceSettings || {};
+  elements.invoiceCompanyNameInput.value = settings.companyName || "";
+  elements.invoicePhoneInput.value = settings.phone || "";
+  elements.invoiceBankNameInput.value = settings.bankName || "";
+  elements.invoiceBankAccountInput.value = settings.bankAccount || "";
+  elements.invoiceLogoTextInput.value = settings.logoText || "";
+  elements.invoiceQrTextInput.value = settings.qrText || "";
+  elements.invoiceFooterNoteInput.value = settings.footerNote || "";
+}
+
 function handleAddPaymentPart() {
   const drafts = readPaymentDraftsFromDom();
   drafts.push(createPaymentDraft({ date: elements.dateInput.value || getTodayDateValue() }));
@@ -2077,6 +2258,33 @@ async function handleSalarySubmit(event) {
     setInlineMessage(elements.salaryMessage, "Цалингийн мөр хадгалагдлаа.", false, true);
   } catch (error) {
     setInlineMessage(elements.salaryMessage, error.message, true);
+  }
+}
+
+async function handleInvoiceSettingsSubmit(event) {
+  event.preventDefault();
+  setInlineMessage(elements.invoiceSettingsMessage, "", false);
+
+  const payload = {
+    companyName: elements.invoiceCompanyNameInput.value.trim(),
+    phone: elements.invoicePhoneInput.value.trim(),
+    bankName: elements.invoiceBankNameInput.value.trim(),
+    bankAccount: elements.invoiceBankAccountInput.value.trim(),
+    logoText: elements.invoiceLogoTextInput.value.trim(),
+    qrText: elements.invoiceQrTextInput.value.trim(),
+    footerNote: elements.invoiceFooterNoteInput.value.trim(),
+  };
+
+  try {
+    const payloadResponse = await apiFetch("/api/invoice-settings", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+
+    applyBootstrapPayload(payloadResponse);
+    setInlineMessage(elements.invoiceSettingsMessage, "Баримтын тохиргоо хадгалагдлаа.", false, true);
+  } catch (error) {
+    setInlineMessage(elements.invoiceSettingsMessage, error.message, true);
   }
 }
 

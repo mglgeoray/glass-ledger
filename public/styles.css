@@ -301,6 +301,84 @@ h1 {
   margin-top: 22px;
 }
 
+.panel-collapse-header,
+.panel-generated-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.panel-generated-header {
+  grid-column: 1 / -1;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 252, 247, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.panel-generated-header h2 {
+  font-size: 1.15rem;
+}
+
+.panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 104px;
+  min-height: 40px;
+  margin-left: auto;
+  padding: 0 14px;
+  border: 1px solid rgba(31, 47, 62, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.panel-toggle:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 155, 142, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.panel-toggle-arrow {
+  display: inline-block;
+  font-size: 1.05rem;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.is-collapsed .panel-toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.seller-quick-panel.is-collapsed > :not(.panel-generated-header),
+.dashboard-panel.is-collapsed > :not(.dashboard-header),
+.summary-grid.is-collapsed > :not(.panel-generated-header),
+.progress-card.is-collapsed > :not(.progress-header),
+.editor-zone.is-collapsed > :not(.editor-zone-header),
+.table-card.is-collapsed > :not(.panel-generated-header) {
+  display: none !important;
+}
+
+.dashboard-panel.is-collapsed,
+.progress-card.is-collapsed,
+.editor-zone.is-collapsed,
+.table-card.is-collapsed {
+  padding-bottom: 24px;
+}
+
+.summary-grid.is-collapsed {
+  grid-template-columns: 1fr;
+}
+
 .summary-card {
   padding: 22px;
   border-radius: 22px;

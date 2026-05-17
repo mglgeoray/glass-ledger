@@ -14,7 +14,7 @@ const PORT = Number(process.env.PORT || 3187);
 const HOST = process.env.HOST || "0.0.0.0";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const ONE_MB = 1024 * 1024;
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 const DEFAULT_ADMIN_CODE = "Sun60077779";
 const DEFAULT_MANAGER_CODE = "viewer123";
 const DEFAULT_EDITOR_CODE = "editor123";
@@ -152,6 +152,19 @@ function buildDefaultStore() {
     damageRecords: [],
     materialPurchases: [],
     salaryRecords: [],
+    invoiceSettings: buildDefaultInvoiceSettings(),
+  };
+}
+
+function buildDefaultInvoiceSettings() {
+  return {
+    companyName: "Шилний данс",
+    phone: "",
+    bankName: "",
+    bankAccount: "",
+    logoText: "ШД",
+    qrText: "",
+    footerNote: "Худалдан авалт хийсэнд баярлалаа.",
   };
 }
 
@@ -507,6 +520,21 @@ function normalizeStoredSalaryRecord(rawRecord) {
   };
 }
 
+function normalizeInvoiceSettings(rawSettings) {
+  const defaults = buildDefaultInvoiceSettings();
+  const settings = rawSettings && typeof rawSettings === "object" ? rawSettings : {};
+
+  return {
+    companyName: String(settings.companyName || defaults.companyName).trim() || defaults.companyName,
+    phone: String(settings.phone || "").trim(),
+    bankName: String(settings.bankName || "").trim(),
+    bankAccount: String(settings.bankAccount || "").trim(),
+    logoText: String(settings.logoText || defaults.logoText).trim().slice(0, 6) || defaults.logoText,
+    qrText: String(settings.qrText || "").trim(),
+    footerNote: String(settings.footerNote || defaults.footerNote).trim() || defaults.footerNote,
+  };
+}
+
 function getSortedProductDefaults() {
   return buildDefaultStore().products;
 }
@@ -603,6 +631,7 @@ function normalizeStore(store) {
     salaryRecords: Array.isArray(store?.salaryRecords)
       ? store.salaryRecords.map(normalizeStoredSalaryRecord).filter(Boolean)
       : [],
+    invoiceSettings: normalizeInvoiceSettings(store?.invoiceSettings),
   };
 }
 
@@ -1343,6 +1372,15 @@ function validateSalaryRecord(payload) {
   };
 }
 
+function validateInvoiceSettings(payload) {
+  const settings = normalizeInvoiceSettings(payload);
+  if (!settings.companyName) {
+    throw new Error("Компанийн нэрийг оруулна уу.");
+  }
+
+  return settings;
+}
+
 function validateProduct(payload, store, existingProductId) {
   const name = normalizeProductName(payload.name);
   const defaultPiecesPerCrate = toPositiveInteger(payload.defaultPiecesPerCrate ?? payload.piecesPerCrate);
@@ -1471,6 +1509,7 @@ function buildBootstrapPayload(sessionOrRole, store, credentials) {
     damageRecords: isAdmin ? sortDamageRecords(store.damageRecords) : [],
     materialPurchases: canViewLedger ? sortMaterialPurchases(store.materialPurchases) : [],
     salaryRecords: isAdmin ? sortSalaryRecords(store.salaryRecords) : [],
+    invoiceSettings: canViewLedger ? store.invoiceSettings : normalizeInvoiceSettings({}),
     inventoryStats: canViewLedger ? buildInventoryStatsMap(store) : {},
     profitSummaries: isAdmin ? buildProfitSummariesMap(store) : {},
     businessSummary: isAdmin ? buildBusinessSummary(store) : {},
@@ -1653,6 +1692,19 @@ async function handleApiRequest(request, response, url) {
     }
 
     await persistCredentials();
+    await sendEditorPayload(response, session, store);
+    return;
+  }
+
+  if (request.method === "PUT" && pathname === "/api/invoice-settings") {
+    const session = await requireAuthenticatedRole(request, response, ["admin"]);
+    if (!session) {
+      return;
+    }
+
+    const body = await readRequestBody(request);
+    store.invoiceSettings = asBadRequest(() => validateInvoiceSettings(body));
+    await persistStore();
     await sendEditorPayload(response, session, store);
     return;
   }
