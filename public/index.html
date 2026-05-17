@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517g" />
+    <link rel="stylesheet" href="/styles.css?v=20260517h" />
   </head>
   <body>
     <div class="grain"></div>
@@ -51,21 +51,29 @@
         <div class="dashboard-header">
           <div>
             <p class="eyebrow">УДИРДЛАГЫН САМБАР</p>
-            <h2>Өнөөдрийн зураглал</h2>
+            <h2>Бизнесийн зураглал</h2>
           </div>
-          <p class="dashboard-copy" id="dashboardHint">Борлуулалт, авлага, үлдэгдлийн гол үзүүлэлтүүд энд нэг дор харагдана.</p>
+          <div class="dashboard-header-tools">
+            <div class="segmented-control" id="dashboardPeriodTabs" aria-label="Тайлангийн хугацаа">
+              <button class="active" type="button" data-dashboard-period="today">Өнөөдөр</button>
+              <button type="button" data-dashboard-period="week">7 хоног</button>
+              <button type="button" data-dashboard-period="month">Сар</button>
+              <button type="button" data-dashboard-period="year">Жил</button>
+            </div>
+            <p class="dashboard-copy" id="dashboardHint">Борлуулалт, авлага, үлдэгдлийн гол үзүүлэлтүүд энд нэг дор харагдана.</p>
+          </div>
         </div>
 
         <div class="dashboard-grid">
           <article class="dashboard-card seller-hidden">
-            <span>Өнөөдрийн борлуулалт</span>
-            <strong id="dashboardTodaySales">0 ₮</strong>
-            <small id="dashboardTodayCount">0 мөр</small>
+            <span id="dashboardSalesLabel">Өнөөдрийн борлуулалт</span>
+            <strong id="dashboardPeriodSales">0 ₮</strong>
+            <small id="dashboardPeriodCount">0 мөр</small>
           </article>
           <article class="dashboard-card seller-hidden">
-            <span>Энэ сарын борлуулалт</span>
-            <strong id="dashboardMonthSales">0 ₮</strong>
-            <small id="dashboardMonthCount">0 мөр</small>
+            <span>Төлсөн дүн</span>
+            <strong id="dashboardPeriodCollected">0 ₮</strong>
+            <small id="dashboardPeriodPaidCount">0 төлөлт</small>
           </article>
           <article class="dashboard-card warning">
             <span>Нийт авлага</span>
@@ -92,6 +100,16 @@
             <strong id="dashboardLowStockCount">0</strong>
             <small id="dashboardLowStockText">Бүх төрөл хэвийн</small>
           </article>
+          <article class="dashboard-card danger">
+            <span>Гэмтэл</span>
+            <strong id="dashboardPeriodDamage">0 ш</strong>
+            <small id="dashboardPeriodDamageCost">0 ₮ өртөг</small>
+          </article>
+          <article class="dashboard-card">
+            <span>Нийт үлдэгдэл</span>
+            <strong id="dashboardRemainingPieces">0 ш</strong>
+            <small id="dashboardRemainingCost">0 ₮ өртөг</small>
+          </article>
         </div>
 
         <div class="dashboard-split">
@@ -99,6 +117,11 @@
             <div class="subpanel-header">
               <h3>Авлагын товчоо</h3>
               <span id="receivableSummaryText">Авлага алга байна.</span>
+            </div>
+            <div class="aging-grid">
+              <div><span>0-7 хоног</span><strong id="aging0To7">0 ₮</strong></div>
+              <div><span>8-30 хоног</span><strong id="aging8To30">0 ₮</strong></div>
+              <div><span>31+ хоног</span><strong id="aging31Plus">0 ₮</strong></div>
             </div>
             <div class="table-scroll compact-table-scroll">
               <table class="compact-table">
@@ -108,6 +131,7 @@
                     <th>Авлага (₮)</th>
                     <th>Мөр</th>
                     <th>Сүүлийн огноо</th>
+                    <th>Насжилт</th>
                   </tr>
                 </thead>
                 <tbody id="receivableTableBody"></tbody>
@@ -117,10 +141,10 @@
 
           <article class="dashboard-subpanel">
             <div class="subpanel-header">
-              <h3>Нөөцийн анхааруулга</h3>
-              <span id="stockAlertSummaryText">Анхаарах зүйл алга.</span>
+              <h3>Анхаарах зүйлс</h3>
+              <span id="attentionSummaryText">Анхаарах зүйл алга.</span>
             </div>
-            <div class="alert-list" id="stockAlertList"></div>
+            <div class="alert-list" id="attentionList"></div>
           </article>
         </div>
       </section>
@@ -905,6 +929,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517g" defer></script>
+    <script src="/app.js?v=20260517h" defer></script>
   </body>
 </html>

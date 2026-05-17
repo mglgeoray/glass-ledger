@@ -364,6 +364,36 @@ h1 {
   align-items: flex-start;
 }
 
+.dashboard-header-tools {
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+}
+
+.segmented-control {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 47, 62, 0.08);
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.segmented-control button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.segmented-control button.active {
+  background: var(--ink);
+  color: #fff;
+}
+
 .dashboard-copy {
   margin: 0;
   max-width: 520px;
@@ -439,8 +469,31 @@ h1 {
   background: rgba(255, 255, 255, 0.48);
 }
 
+.aging-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.aging-grid div {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(252, 248, 241, 0.86);
+}
+
+.aging-grid span,
+.aging-grid strong {
+  display: block;
+}
+
+.aging-grid span {
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
 .compact-table {
-  min-width: 560px;
+  min-width: 660px;
 }
 
 .compact-table-scroll {
@@ -1094,6 +1147,7 @@ textarea:focus {
   .inventory-note,
   .seller-quick-panel,
   .dashboard-header,
+  .dashboard-header-tools,
   .subpanel-header,
   .toolbar,
   .payment-editor-header,
@@ -1150,6 +1204,7 @@ textarea:focus {
   .finance-stat-grid,
   .dashboard-grid,
   .dashboard-split,
+  .aging-grid,
   .cost-summary-grid,
   .form-grid,
   .form-summary,

@@ -16,6 +16,7 @@ const state = {
   profitSummaries: {},
   businessSummary: {},
   activeProductId: null,
+  dashboardPeriod: "today",
 };
 
 let paymentDraftSeed = 0;
@@ -43,15 +44,21 @@ const elements = {
   dashboardGrossProfit: document.querySelector("#dashboardGrossProfit"),
   dashboardLowStockCount: document.querySelector("#dashboardLowStockCount"),
   dashboardLowStockText: document.querySelector("#dashboardLowStockText"),
-  dashboardMonthCount: document.querySelector("#dashboardMonthCount"),
-  dashboardMonthSales: document.querySelector("#dashboardMonthSales"),
   dashboardNetProfit: document.querySelector("#dashboardNetProfit"),
   dashboardPanel: document.querySelector("#dashboardPanel"),
+  dashboardPeriodCollected: document.querySelector("#dashboardPeriodCollected"),
+  dashboardPeriodCount: document.querySelector("#dashboardPeriodCount"),
+  dashboardPeriodDamage: document.querySelector("#dashboardPeriodDamage"),
+  dashboardPeriodDamageCost: document.querySelector("#dashboardPeriodDamageCost"),
+  dashboardPeriodPaidCount: document.querySelector("#dashboardPeriodPaidCount"),
+  dashboardPeriodSales: document.querySelector("#dashboardPeriodSales"),
+  dashboardPeriodTabs: document.querySelector("#dashboardPeriodTabs"),
   dashboardReceivable: document.querySelector("#dashboardReceivable"),
   dashboardReceivableCount: document.querySelector("#dashboardReceivableCount"),
+  dashboardRemainingCost: document.querySelector("#dashboardRemainingCost"),
+  dashboardRemainingPieces: document.querySelector("#dashboardRemainingPieces"),
   dashboardSalaryExpense: document.querySelector("#dashboardSalaryExpense"),
-  dashboardTodayCount: document.querySelector("#dashboardTodayCount"),
-  dashboardTodaySales: document.querySelector("#dashboardTodaySales"),
+  dashboardSalesLabel: document.querySelector("#dashboardSalesLabel"),
   dateInput: document.querySelector("#dateInput"),
   editorZoneEyebrow: document.querySelector("#editorZoneEyebrow"),
   editorZoneTitle: document.querySelector("#editorZoneTitle"),
@@ -163,8 +170,6 @@ const elements = {
   salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
-  stockAlertList: document.querySelector("#stockAlertList"),
-  stockAlertSummaryText: document.querySelector("#stockAlertSummaryText"),
   taxCostInput: document.querySelector("#taxCostInput"),
   toolbarCopy: document.querySelector("#toolbarCopy"),
   transportCostInput: document.querySelector("#transportCostInput"),
@@ -173,6 +178,11 @@ const elements = {
   wageCostInput: document.querySelector("#wageCostInput"),
   damageCostValue: document.querySelector("#damageCostValue"),
   adminOnlyPanels: Array.from(document.querySelectorAll("[data-admin-only]")),
+  aging0To7: document.querySelector("#aging0To7"),
+  aging8To30: document.querySelector("#aging8To30"),
+  aging31Plus: document.querySelector("#aging31Plus"),
+  attentionList: document.querySelector("#attentionList"),
+  attentionSummaryText: document.querySelector("#attentionSummaryText"),
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -185,6 +195,7 @@ function bindEvents() {
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.addEntryButton.addEventListener("click", openNewEntryModal);
   elements.quickAddEntryButton.addEventListener("click", openNewEntryModal);
+  elements.dashboardPeriodTabs.addEventListener("click", handleDashboardPeriodClick);
   elements.addPaymentPartButton.addEventListener("click", handleAddPaymentPart);
   elements.cancelModalButton.addEventListener("click", closeEntryModal);
   elements.closeModalButton.addEventListener("click", closeEntryModal);
@@ -464,10 +475,14 @@ function renderDashboard() {
   }
 
   const metrics = buildDashboardMetrics();
-  elements.dashboardTodaySales.textContent = `${formatMoney(metrics.todaySales)} ₮`;
-  elements.dashboardTodayCount.textContent = `${formatNumber(metrics.todayCount)} мөр`;
-  elements.dashboardMonthSales.textContent = `${formatMoney(metrics.monthSales)} ₮`;
-  elements.dashboardMonthCount.textContent = `${formatNumber(metrics.monthCount)} мөр`;
+  const period = metrics.periods[state.dashboardPeriod] || metrics.periods.today;
+  elements.dashboardSalesLabel.textContent = `${getDashboardPeriodLabel(state.dashboardPeriod)} борлуулалт`;
+  elements.dashboardPeriodSales.textContent = `${formatMoney(period.sales)} ₮`;
+  elements.dashboardPeriodCount.textContent = `${formatNumber(period.salesCount)} мөр`;
+  elements.dashboardPeriodCollected.textContent = `${formatMoney(period.collected)} ₮`;
+  elements.dashboardPeriodPaidCount.textContent = `${formatNumber(period.paymentCount)} төлөлт`;
+  elements.dashboardPeriodDamage.textContent = `${formatNumber(period.damagedPieces)} ш`;
+  elements.dashboardPeriodDamageCost.textContent = `${formatMoney(period.damageCost)} ₮ өртөг`;
   elements.dashboardReceivable.textContent = `${formatMoney(metrics.receivableTotal)} ₮`;
   elements.dashboardReceivableCount.textContent = `${formatNumber(metrics.receivableEntryCount)} мөр`;
   elements.dashboardGrossProfit.textContent = `${formatMoney(metrics.grossProfit)} ₮`;
@@ -476,12 +491,19 @@ function renderDashboard() {
   elements.dashboardNetProfit.style.color = metrics.netProfit < 0 ? "var(--danger)" : "var(--accent)";
   elements.dashboardLowStockCount.textContent = formatNumber(metrics.stockAlerts.length);
   elements.dashboardLowStockText.textContent = metrics.stockAlerts.length ? "Нөөц шалгах шаардлагатай" : "Бүх төрөл хэвийн";
+  elements.dashboardRemainingPieces.textContent = `${formatNumber(metrics.remainingPieces)} ш`;
+  elements.dashboardRemainingCost.textContent = `${formatMoney(metrics.remainingCost)} ₮ өртөг`;
   elements.dashboardHint.textContent = isManager()
     ? "Борлуулагчид авлага болон нөөцийн анхааруулга төвлөрч харагдана."
     : "Борлуулалт, авлага, нийт цалин, ашиг болон нөөцийн эрсдэл нэг дор харагдана.";
 
+  for (const button of elements.dashboardPeriodTabs.querySelectorAll("[data-dashboard-period]")) {
+    button.classList.toggle("active", button.dataset.dashboardPeriod === state.dashboardPeriod);
+  }
+
   renderReceivableDashboard(metrics.receivables);
-  renderStockAlerts(metrics.stockAlerts);
+  renderAgingSummary(metrics.aging);
+  renderAttentionItems(metrics.attentionItems);
 }
 
 function renderReceivableDashboard(receivables) {
@@ -491,7 +513,7 @@ function renderReceivableDashboard(receivables) {
     : "Авлага алга байна.";
 
   if (!receivables.length) {
-    elements.receivableTableBody.innerHTML = '<tr class="empty-state"><td colspan="4">Авлагатай харилцагч алга байна.</td></tr>';
+    elements.receivableTableBody.innerHTML = '<tr class="empty-state"><td colspan="5">Авлагатай харилцагч алга байна.</td></tr>';
     return;
   }
 
@@ -503,28 +525,35 @@ function renderReceivableDashboard(receivables) {
           <td class="money-cell">${formatMoney(item.amount)}</td>
           <td class="quantity-cell">${formatNumber(item.count)}</td>
           <td>${escapeHtml(item.latestDate)}</td>
+          <td>${escapeHtml(getReceivableAgeLabel(item.maxAgeDays))}</td>
         </tr>
       `,
     )
     .join("");
 }
 
-function renderStockAlerts(alerts) {
-  elements.stockAlertSummaryText.textContent = alerts.length
-    ? `${formatNumber(alerts.length)} төрлийн нөөц анхаарах түвшинд байна.`
+function renderAgingSummary(aging) {
+  elements.aging0To7.textContent = `${formatMoney(aging.current)} ₮`;
+  elements.aging8To30.textContent = `${formatMoney(aging.mid)} ₮`;
+  elements.aging31Plus.textContent = `${formatMoney(aging.old)} ₮`;
+}
+
+function renderAttentionItems(items) {
+  elements.attentionSummaryText.textContent = items.length
+    ? `${formatNumber(items.length)} анхаарах зүйл байна.`
     : "Анхаарах зүйл алга.";
 
-  if (!alerts.length) {
-    elements.stockAlertList.innerHTML = '<p class="alert-empty">Нөөцийн доод түвшинд хүрсэн шил алга байна.</p>';
+  if (!items.length) {
+    elements.attentionList.innerHTML = '<p class="alert-empty">Одоогоор анхаарах зүйл алга байна.</p>';
     return;
   }
 
-  elements.stockAlertList.innerHTML = alerts
+  elements.attentionList.innerHTML = items
     .map(
-      (alert) => `
-        <div class="alert-item ${alert.remainingPieces <= 0 ? "danger" : ""}">
-          <strong>${escapeHtml(alert.productName)}</strong>
-          <span>${formatNumber(alert.remainingPieces)} ширхэг үлдсэн • босго ${formatNumber(alert.threshold)} ширхэг</span>
+      (item) => `
+        <div class="alert-item ${item.level === "danger" ? "danger" : ""}">
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.detail)}</span>
         </div>
       `,
     )
@@ -1178,51 +1207,148 @@ function getCurrentMonthValue() {
   return getTodayDateValue().slice(0, 7);
 }
 
+function getDateFromInput(value) {
+  const [year, month, day] = String(value || "").split("-").map((part) => Number.parseInt(part, 10));
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function getDaysBetween(startDateText, endDateText) {
+  const start = getDateFromInput(startDateText);
+  const end = getDateFromInput(endDateText);
+  if (!start || !end) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
+}
+
+function isDateInDashboardPeriod(dateText, periodKey, todayText) {
+  const date = getDateFromInput(dateText);
+  const today = getDateFromInput(todayText);
+  if (!date || !today) {
+    return false;
+  }
+
+  const diffDays = Math.floor((today.getTime() - date.getTime()) / 86400000);
+  if (periodKey === "today") {
+    return diffDays === 0;
+  }
+  if (periodKey === "week") {
+    return diffDays >= 0 && diffDays <= 6;
+  }
+  if (periodKey === "month") {
+    return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth();
+  }
+  if (periodKey === "year") {
+    return date.getFullYear() === today.getFullYear();
+  }
+
+  return false;
+}
+
+function createEmptyPeriodMetric() {
+  return {
+    sales: 0,
+    salesCount: 0,
+    collected: 0,
+    paymentCount: 0,
+    damagedPieces: 0,
+    damageCost: 0,
+  };
+}
+
+function getDashboardPeriodLabel(periodKey) {
+  const labels = {
+    today: "Өнөөдрийн",
+    week: "7 хоногийн",
+    month: "Энэ сарын",
+    year: "Энэ жилийн",
+  };
+
+  return labels[periodKey] || labels.today;
+}
+
+function getReceivableAgeLabel(ageDays) {
+  if (ageDays <= 7) {
+    return "0-7 хоног";
+  }
+  if (ageDays <= 30) {
+    return "8-30 хоног";
+  }
+  return "31+ хоног";
+}
+
 function buildDashboardMetrics() {
   const today = getTodayDateValue();
-  const month = getCurrentMonthValue();
+  const periodKeys = ["today", "week", "month", "year"];
+  const periods = Object.fromEntries(periodKeys.map((key) => [key, createEmptyPeriodMetric()]));
   const receivableMap = new Map();
   const stockAlerts = [];
-  let todaySales = 0;
-  let todayCount = 0;
-  let monthSales = 0;
-  let monthCount = 0;
+  const aging = { current: 0, mid: 0, old: 0 };
+  const damageByProduct = new Map();
   let receivableTotal = 0;
   let receivableEntryCount = 0;
+  let remainingPieces = 0;
+  let remainingCost = 0;
 
   for (const entry of state.entries) {
     const totalAmount = Number(entry.totalAmount || 0);
-    if (entry.date === today) {
-      todaySales += totalAmount;
-      todayCount += 1;
-    }
-
-    if (String(entry.date || "").slice(0, 7) === month) {
-      monthSales += totalAmount;
-      monthCount += 1;
+    for (const periodKey of periodKeys) {
+      if (isDateInDashboardPeriod(entry.date, periodKey, today)) {
+        periods[periodKey].sales += totalAmount;
+        periods[periodKey].salesCount += 1;
+      }
     }
 
     const receivable = getEntryReceivableAmount(entry);
     if (receivable > 0.009) {
+      const ageDays = getDaysBetween(entry.date, today);
       receivableTotal += receivable;
       receivableEntryCount += 1;
+      if (ageDays <= 7) {
+        aging.current += receivable;
+      } else if (ageDays <= 30) {
+        aging.mid += receivable;
+      } else {
+        aging.old += receivable;
+      }
+
       const customer = entry.customer || "Нэргүй харилцагч";
       const existing = receivableMap.get(customer) || {
         customer,
         amount: 0,
         count: 0,
         latestDate: entry.date || "",
+        maxAgeDays: 0,
       };
       existing.amount += receivable;
       existing.count += 1;
       existing.latestDate = String(entry.date || "").localeCompare(existing.latestDate) > 0 ? entry.date : existing.latestDate;
+      existing.maxAgeDays = Math.max(existing.maxAgeDays, ageDays);
       receivableMap.set(customer, existing);
+    }
+
+    for (const payment of getEntryPayments(entry)) {
+      for (const periodKey of periodKeys) {
+        if (isDateInDashboardPeriod(payment.date || entry.date, periodKey, today)) {
+          periods[periodKey].collected += Number(payment.amount || 0);
+          periods[periodKey].paymentCount += 1;
+        }
+      }
     }
   }
 
   for (const product of state.products) {
     const stats = getInventoryStats(product.id);
+    const summary = getProfitSummary(product.id);
     const threshold = Math.max(Number(product.defaultPiecesPerCrate || 0), 1);
+    remainingPieces += Number(stats.remainingPieces || 0);
+    remainingCost += Number(summary.remainingCost || 0);
+
     if (stats.importedPieces > 0 && stats.remainingPieces <= threshold) {
       stockAlerts.push({
         productName: product.name,
@@ -1232,21 +1358,70 @@ function buildDashboardMetrics() {
     }
   }
 
+  for (const record of state.damageRecords) {
+    const product = state.products.find((item) => item.id === record.productId);
+    const productName = product?.name || record.productId || "Тодорхойгүй төрөл";
+    const currentDamage = damageByProduct.get(productName) || 0;
+    damageByProduct.set(productName, currentDamage + Number(record.quantity || 0));
+
+    const summary = getProfitSummary(record.productId);
+    const damageCostPerPiece = Number(summary.pieceCost || 0);
+    for (const periodKey of periodKeys) {
+      if (isDateInDashboardPeriod(record.date, periodKey, today)) {
+        periods[periodKey].damagedPieces += Number(record.quantity || 0);
+        periods[periodKey].damageCost += Number(record.quantity || 0) * damageCostPerPiece;
+      }
+    }
+  }
+
   const receivables = [...receivableMap.values()]
     .map((item) => ({ ...item, amount: Number(item.amount.toFixed(2)) }))
     .sort((left, right) => right.amount - left.amount || right.latestDate.localeCompare(left.latestDate));
 
   stockAlerts.sort((left, right) => left.remainingPieces - right.remainingPieces || left.productName.localeCompare(right.productName));
+  const oldReceivables = receivables.filter((item) => item.maxAgeDays > 30);
+  const highDamageItems = [...damageByProduct.entries()]
+    .filter(([, quantity]) => quantity >= 10)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 3);
+  const attentionItems = [
+    ...stockAlerts.map((alert) => ({
+      level: alert.remainingPieces <= 0 ? "danger" : "warning",
+      title: alert.productName,
+      detail: `${formatNumber(alert.remainingPieces)} ширхэг үлдсэн • босго ${formatNumber(alert.threshold)} ширхэг`,
+    })),
+    ...oldReceivables.slice(0, 3).map((item) => ({
+      level: "danger",
+      title: `${item.customer} авлага`,
+      detail: `${formatMoney(item.amount)} ₮ • ${getReceivableAgeLabel(item.maxAgeDays)}`,
+    })),
+    ...highDamageItems.map(([productName, quantity]) => ({
+      level: "warning",
+      title: `${productName} гэмтэл өндөр`,
+      detail: `${formatNumber(quantity)} ширхэг нийт гэмтэл бүртгэгдсэн`,
+    })),
+  ].slice(0, 8);
+
+  for (const period of Object.values(periods)) {
+    period.sales = Number(period.sales.toFixed(2));
+    period.collected = Number(period.collected.toFixed(2));
+    period.damageCost = Number(period.damageCost.toFixed(2));
+  }
 
   return {
-    todaySales: Number(todaySales.toFixed(2)),
-    todayCount,
-    monthSales: Number(monthSales.toFixed(2)),
-    monthCount,
+    periods,
     receivableTotal: Number(receivableTotal.toFixed(2)),
     receivableEntryCount,
     receivables,
+    aging: {
+      current: Number(aging.current.toFixed(2)),
+      mid: Number(aging.mid.toFixed(2)),
+      old: Number(aging.old.toFixed(2)),
+    },
     stockAlerts,
+    attentionItems,
+    remainingPieces,
+    remainingCost: Number(remainingCost.toFixed(2)),
     grossProfit: Number(state.businessSummary?.grossProfit || 0),
     salaryExpense: Number(state.businessSummary?.salaryExpense || 0),
     netProfit: Number(state.businessSummary?.netProfit || 0),
@@ -1590,6 +1765,16 @@ function handlePaymentListClick(event) {
   const drafts = readPaymentDraftsFromDom().filter((payment) => payment.id !== targetId);
   renderPaymentRows(drafts);
   updateFormSummary();
+}
+
+function handleDashboardPeriodClick(event) {
+  const button = event.target.closest("[data-dashboard-period]");
+  if (!button) {
+    return;
+  }
+
+  state.dashboardPeriod = button.dataset.dashboardPeriod || "today";
+  renderDashboard();
 }
 
 function updateFormSummary() {
