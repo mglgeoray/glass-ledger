@@ -18,7 +18,7 @@ const SCHEMA_VERSION = 4;
 const DEFAULT_ADMIN_CODE = "Sun60077779";
 const DEFAULT_MANAGER_CODE = "viewer123";
 const DEFAULT_EDITOR_CODE = "editor123";
-const DEFAULT_MANAGER_NAME = "Худалдааны менежер 1";
+const DEFAULT_MANAGER_NAME = "Борлуулагч 1";
 const LOGIN_MAX_ATTEMPTS = getEnvPositiveInteger("GLASS_LEDGER_LOGIN_MAX_ATTEMPTS", 8);
 const LOGIN_WINDOW_MS = getEnvPositiveInteger("GLASS_LEDGER_LOGIN_WINDOW_MINUTES", 15) * 60 * 1000;
 const LOGIN_BLOCK_MS = getEnvPositiveInteger("GLASS_LEDGER_LOGIN_BLOCK_MINUTES", 15) * 60 * 1000;
@@ -110,7 +110,7 @@ function collectCredentialSecurityIssues(credentials) {
 
   for (const account of credentials.managerAccounts || []) {
     if (isInsecureAccessCode(account.accessCode)) {
-      issues.push(`Менежер "${account.name}"-ийн код сул эсвэл default утгатай байна.`);
+      issues.push(`Борлуулагч "${account.name}"-ийн код сул эсвэл default утгатай байна.`);
     }
   }
 
@@ -1398,27 +1398,27 @@ function validateManagerAccount(payload, credentials, existingManagerId) {
   const accessCode = String(payload.accessCode || payload.code || "").trim();
 
   if (!name) {
-    throw new Error("Худалдааны менежерийн нэрийг оруулна уу.");
+    throw new Error("Борлуулагчийн нэрийг оруулна уу.");
   }
 
   if (isInsecureAccessCode(accessCode)) {
-    throw new Error("Менежерийн нэвтрэх код хамгийн багадаа 8 тэмдэгттэй, default биш, таахад хэцүү байх ёстой.");
+    throw new Error("Борлуулагчийн нэвтрэх код хамгийн багадаа 8 тэмдэгттэй, default биш, таахад хэцүү байх ёстой.");
   }
 
   if (accessCode === credentials.adminCode) {
-    throw new Error("ADMIN кодтой ижил менежерийн код ашиглаж болохгүй.");
+    throw new Error("ADMIN кодтой ижил борлуулагчийн код ашиглаж болохгүй.");
   }
 
   const duplicateCode = credentials.managerAccounts.find(
     (account) => account.id !== existingManagerId && account.accessCode === accessCode,
   );
   if (duplicateCode) {
-    throw new Error("Ийм нэвтрэх кодтой менежер аль хэдийн байна.");
+    throw new Error("Ийм нэвтрэх кодтой борлуулагч аль хэдийн байна.");
   }
 
   const duplicateName = credentials.managerAccounts.find((account) => account.id !== existingManagerId && account.name === name);
   if (duplicateName) {
-    throw new Error("Ийм нэртэй менежер аль хэдийн байна.");
+    throw new Error("Ийм нэртэй борлуулагч аль хэдийн байна.");
   }
 
   return {
@@ -1495,7 +1495,7 @@ function buildBootstrapPayload(sessionOrRole, store, credentials) {
     businessSummary: isAdmin ? buildBusinessSummary(store) : {},
     defaults: {
       adminLabel: "ADMIN",
-      managerLabel: "Худалдааны менежер",
+      managerLabel: "Борлуулагч",
     },
   };
 }
@@ -1513,7 +1513,7 @@ async function requireAuthenticatedRole(request, response, acceptedRoles) {
     if (!managerAccount) {
       clearSession(session.token);
       clearSessionCookie(request, response);
-      sendError(response, 401, "Таны менежерийн эрх хүчингүй болсон байна. Дахин нэвтэрнэ үү.");
+      sendError(response, 401, "Таны борлуулагчийн эрх хүчингүй болсон байна. Дахин нэвтэрнэ үү.");
       return null;
     }
 
@@ -1638,7 +1638,7 @@ async function handleApiRequest(request, response, url) {
     const managerId = decodeURIComponent(pathname.replace("/api/manager-accounts/", ""));
     const managerIndex = credentials.managerAccounts.findIndex((account) => account.id === managerId);
     if (managerIndex === -1) {
-      sendError(response, 404, "Менежерийн эрх олдсонгүй.");
+      sendError(response, 404, "Борлуулагчийн эрх олдсонгүй.");
       return;
     }
 
@@ -1667,7 +1667,7 @@ async function handleApiRequest(request, response, url) {
     credentials.managerAccounts = credentials.managerAccounts.filter((account) => account.id !== managerId);
 
     if (credentials.managerAccounts.length === initialLength) {
-      sendError(response, 404, "Устгах менежер олдсонгүй.");
+      sendError(response, 404, "Устгах борлуулагч олдсонгүй.");
       return;
     }
 
@@ -1768,7 +1768,7 @@ async function handleApiRequest(request, response, url) {
     store.entries.push({
       id: crypto.randomUUID(),
       ...normalized,
-      recordedByName: session.role === "admin" ? "ADMIN" : normalizeUserDisplayName(session.displayName || "") || "Худалдааны менежер",
+      recordedByName: session.role === "admin" ? "ADMIN" : normalizeUserDisplayName(session.displayName || "") || "Борлуулагч",
       recordedByRole: session.role,
       createdAt: timestamp,
       updatedAt: timestamp,

@@ -39,6 +39,10 @@ body.locked {
   overflow: hidden;
 }
 
+body.seller-view .seller-hidden {
+  display: none !important;
+}
+
 button,
 input,
 select,
@@ -433,6 +437,10 @@ table {
   width: 100%;
   border-collapse: collapse;
   min-width: 1420px;
+}
+
+body.seller-view table {
+  min-width: 980px;
 }
 
 .secondary-table {

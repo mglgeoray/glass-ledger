@@ -326,7 +326,7 @@ function render() {
 function renderRole() {
   const labels = {
     guest: "Зочин",
-    manager: state.currentUserName ? `Менежер · ${state.currentUserName}` : "Худалдааны менежер",
+    manager: state.currentUserName ? `Борлуулагч · ${state.currentUserName}` : "Борлуулагч",
     admin: "ADMIN",
   };
 
@@ -334,6 +334,7 @@ function renderRole() {
   elements.logoutButton.hidden = state.role === "guest";
   elements.authLayer.classList.toggle("hidden", state.role !== "guest");
   document.body.classList.toggle("locked", state.role === "guest");
+  document.body.classList.toggle("seller-view", isManager());
   elements.addEntryButton.hidden = !canCreateSalesEntry();
   elements.addEntryButton.disabled = canCreateSalesEntry() && !canOpenNewSalesEntry();
 
@@ -355,7 +356,7 @@ function renderRole() {
         true,
       );
     } else {
-      showToolbarMessage("Та ADMIN эрхтэй нэвтэрсэн байна. Импорт, гэмтэл, борлуулалт, материалын мэдээлэл болон худалдааны менежерийн эрхүүдийг бүрэн удирдаж болно.");
+      showToolbarMessage("Та ADMIN эрхтэй нэвтэрсэн байна. Импорт, гэмтэл, борлуулалт, материалын мэдээлэл болон борлуулагчийн эрхүүдийг бүрэн удирдаж болно.");
     }
   } else if (isManager()) {
     if (activeStats && activeStats.remainingPieces <= 0) {
@@ -366,7 +367,7 @@ function renderRole() {
         true,
       );
     } else {
-      showToolbarMessage("Та худалдааны менежерээр нэвтэрсэн байна. Шинэ борлуулалтын мэдээлэл оруулж, бараа материалын худалдан авалтын архивыг харах боломжтой.");
+      showToolbarMessage("Та борлуулагчаар нэвтэрсэн байна. Шинэ борлуулалтын мэдээлэл оруулах боломжтой.");
     }
   } else {
     showToolbarMessage("Кодоор нэвтэрч байж үлдэгдэл, борлуулалтын мэдээллийг харна.");
@@ -485,10 +486,10 @@ function renderEditorZoneHeader() {
   }
 
   if (isManager()) {
-    elements.editorZoneEyebrow.textContent = "МЕНЕЖЕРИЙН ХАРАХ ХЭСЭГ";
+    elements.editorZoneEyebrow.textContent = "БОРЛУУЛАГЧИЙН ХАРАХ ХЭСЭГ";
     elements.editorZoneTitle.textContent = "Бараа материалын худалдан авалтын архив";
     elements.editorZoneCopy.textContent =
-      "Худалдааны менежер энэ хэсгээс тусдаа бараа материалын худалдан авалтын жагсаалт, дүнг харах бөгөөд засвар оруулахгүй. Импорт, гэмтэл, өртөг, менежерийн эрх болон шилний төрлийг зөвхөн ADMIN удирдана.";
+      "Борлуулагч энэ хэсгээс тусдаа бараа материалын худалдан авалтын жагсаалтыг харах бөгөөд засвар оруулахгүй. Импорт, гэмтэл, өртөг, борлуулагчийн эрх болон шилний төрлийг зөвхөн ADMIN удирдана.";
     return;
   }
 
@@ -631,12 +632,12 @@ function renderProfitPanel() {
 function renderManagerAccounts() {
   const managers = getManagerAccounts();
   elements.managerSummaryText.textContent = managers.length
-    ? `Нийт ${managers.length} худалдааны менежерийн эрх үүссэн байна.`
-    : "Одоогоор нэмэгдсэн менежерийн эрх алга байна.";
+    ? `Нийт ${managers.length} борлуулагчийн эрх үүссэн байна.`
+    : "Одоогоор нэмэгдсэн борлуулагчийн эрх алга байна.";
 
   if (!managers.length) {
     elements.managerTableBody.innerHTML =
-      '<tr class="empty-state"><td colspan="4">Эндээс менежерийн нэр, код үүсгээд борлуулалтын мэдээлэл оруулах эрх олгоно.</td></tr>';
+      '<tr class="empty-state"><td colspan="4">Эндээс борлуулагчийн нэр, код үүсгээд борлуулалтын мэдээлэл оруулах эрх олгоно.</td></tr>';
     return;
   }
 
@@ -812,9 +813,10 @@ function renderSalaryTable() {
 
 function renderEntryTable() {
   const product = getActiveProduct();
+  const visibleColumnCount = isManager() ? 9 : 13;
   if (!product) {
     elements.entryTableBody.innerHTML =
-      '<tr class="empty-state"><td colspan="13">Бүтээгдэхүүний мэдээлэл байхгүй байна.</td></tr>';
+      `<tr class="empty-state"><td colspan="${visibleColumnCount}">Бүтээгдэхүүний мэдээлэл байхгүй байна.</td></tr>`;
     return;
   }
 
@@ -826,7 +828,7 @@ function renderEntryTable() {
 
   const productEntries = getEntriesForProduct(product.id);
   if (!productEntries.length) {
-    elements.entryTableBody.innerHTML = `<tr class="empty-state"><td colspan="13">${
+    elements.entryTableBody.innerHTML = `<tr class="empty-state"><td colspan="${visibleColumnCount}">${
       canCreateSalesEntry() ? "Борлуулалтын мөр алга байна. Шинэ мөр нэмээд эхэлнэ үү." : "Одоогоор борлуулалтын бүртгэл алга байна."
     }</td></tr>`;
     return;
@@ -854,10 +856,16 @@ function renderEntryTable() {
           <td>${escapeHtml(entry.customer)}</td>
           <td class="quantity-cell">${formatNumber(entry.quantity)}</td>
           <td class="money-cell">${formatMoney(entry.unitPrice)}</td>
+          ${
+            isManager()
+              ? ""
+              : `
           <td class="money-cell">${formatMoney(entry.totalAmount)}</td>
           <td class="money-cell">${formatMoney(paidAmount)}</td>
           <td class="balance-cell ${receivableAmount <= 0 ? "is-settled" : ""}">${formatMoney(receivableAmount)}</td>
           <td>${renderPaymentBreakdown(entry)}</td>
+          `
+          }
           <td>${escapeHtml(entry.crateLabel || "—")}</td>
           <td>${escapeHtml(entry.note || "—")}</td>
           <td>${actionCell}</td>
@@ -1039,7 +1047,7 @@ function updateRecorderContext() {
     return;
   }
 
-  const recorderName = isManager() ? state.currentUserName || "Худалдааны менежер" : "ADMIN";
+  const recorderName = isManager() ? state.currentUserName || "Борлуулагч" : "ADMIN";
   elements.recorderNameInput.value = recorderName;
   elements.recorderHint.textContent = isManager()
     ? "ADMIN-аас үүсгэсэн таны эрхийн нэр энэ борлуулалтын мөр дээр автоматаар хадгалагдана."
@@ -1585,7 +1593,7 @@ async function handleManagerAccountSubmit(event) {
 
     applyBootstrapPayload(payloadResponse);
     resetManagerAccountForm(false);
-    setInlineMessage(elements.managerMessage, "Менежерийн эрх хадгалагдлаа.", false, true);
+    setInlineMessage(elements.managerMessage, "Борлуулагчийн эрх хадгалагдлаа.", false, true);
   } catch (error) {
     setInlineMessage(elements.managerMessage, error.message, true);
   }
@@ -1668,7 +1676,7 @@ async function handleManagerTableAction(event) {
   }
 
   if (action === "delete-manager" && managerId) {
-    const accepted = window.confirm("Энэ худалдааны менежерийн эрхийг устгахдаа итгэлтэй байна уу?");
+    const accepted = window.confirm("Энэ борлуулагчийн эрхийг устгахдаа итгэлтэй байна уу?");
     if (!accepted) {
       return;
     }

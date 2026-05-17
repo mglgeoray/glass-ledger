@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517a" />
+    <link rel="stylesheet" href="/styles.css?v=20260517b" />
   </head>
   <body>
     <div class="grain"></div>
@@ -59,17 +59,17 @@
           <strong id="remainingValue">0</strong>
           <span>ширхэг</span>
         </article>
-        <article class="summary-card">
+        <article class="summary-card seller-hidden">
           <p>Нийт дүн</p>
           <strong id="billedValue">0</strong>
           <span>₮</span>
         </article>
-        <article class="summary-card accent">
+        <article class="summary-card accent seller-hidden">
           <p>Төлсөн</p>
           <strong id="collectedValue">0</strong>
           <span>₮</span>
         </article>
-        <article class="summary-card warning">
+        <article class="summary-card warning seller-hidden">
           <p>Үлдэгдэл авлага</p>
           <strong id="receivableValue">0</strong>
           <span>₮</span>
@@ -230,10 +230,10 @@
           <article class="finance-card span-2" data-admin-only="true">
             <div class="finance-card-header">
               <div>
-                <p class="finance-card-eyebrow">МЕНЕЖЕРИЙН ЭРХ</p>
-                <h3>Худалдааны менежер нэмэх</h3>
+                <p class="finance-card-eyebrow">БОРЛУУЛАГЧИЙН ЭРХ</p>
+                <h3>Борлуулагч нэмэх</h3>
                 <p class="finance-card-copy">
-                  ADMIN эндээс худалдааны менежерийн нэр болон нэвтрэх код үүсгэнэ. Менежер тухайн
+                  ADMIN эндээс борлуулагчийн нэр болон нэвтрэх код үүсгэнэ. Борлуулагч тухайн
                   кодоор нэвтрээд зөвхөн шинэ борлуулалтын мөр оруулах эрхтэй байна.
                 </p>
               </div>
@@ -244,7 +244,7 @@
 
               <div class="form-grid">
                 <label>
-                  Менежерийн нэр
+                  Борлуулагчийн нэр
                   <input id="managerNameInput" name="name" type="text" placeholder="Жишээ: Нараа" required />
                 </label>
 
@@ -257,13 +257,13 @@
               <p class="form-message" id="managerMessage"></p>
 
               <div class="finance-actions">
-                <button class="primary-button" id="saveManagerButton" type="submit">Менежер хадгалах</button>
+                <button class="primary-button" id="saveManagerButton" type="submit">Борлуулагч хадгалах</button>
                 <button class="ghost-button" id="resetManagerButton" type="button">Цэвэрлэх</button>
               </div>
             </form>
 
             <div class="soft-summary accent">
-              <span id="managerSummaryText">Одоогоор нэмэгдсэн менежерийн эрх алга байна.</span>
+              <span id="managerSummaryText">Одоогоор нэмэгдсэн борлуулагчийн эрх алга байна.</span>
             </div>
 
             <div class="table-scroll small-table-scroll">
@@ -574,7 +574,7 @@
             </div>
 
             <p class="soft-note" id="purchaseReadonlyHint" hidden>
-              Худалдааны менежер энэ хэсгийг зөвхөн харах эрхтэй. Худалдан авалтын мөр нэмэх, засах,
+              Борлуулагч энэ хэсгийг зөвхөн харах эрхтэй. Худалдан авалтын мөр нэмэх, засах,
               устгахыг ADMIN хийдэг.
             </p>
 
@@ -666,10 +666,10 @@
                 <th>Худалдан авагч</th>
                 <th>Тоо (ш)</th>
                 <th>Нэгж үнэ (₮)</th>
-                <th>Нийт дүн (₮)</th>
-                <th>Төлсөн (₮)</th>
-                <th>Авлага (₮)</th>
-                <th>Төлбөрийн задаргаа</th>
+                <th class="seller-hidden">Нийт дүн (₮)</th>
+                <th class="seller-hidden">Төлсөн (₮)</th>
+                <th class="seller-hidden">Авлага (₮)</th>
+                <th class="seller-hidden">Төлбөрийн задаргаа</th>
                 <th>Авдар</th>
                 <th>Тэмдэглэл</th>
                 <th class="actions-column">Үйлдэл</th>
@@ -691,8 +691,8 @@
         <p class="eyebrow">ЭРХИЙН НЭВТРЭЛТ</p>
         <h2>Шилний данс руу нэвтрэх</h2>
         <p class="auth-copy">
-          ADMIN кодоор орвол бүх эрхтэй ажиллана. Худалдааны менежер кодыг ADMIN урьдчилж үүсгэсэн
-          байх ёстой. Менежер нэвтрээд шинэ борлуулалтын мэдээлэл оруулна, харин засах болон устгах
+          ADMIN кодоор орвол бүх эрхтэй ажиллана. Борлуулагчийн кодыг ADMIN урьдчилж үүсгэсэн
+          байх ёстой. Борлуулагч нэвтрээд шинэ борлуулалтын мэдээлэл оруулна, харин засах болон устгах
           эрхгүй.
         </p>
 
@@ -817,6 +817,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517a" defer></script>
+    <script src="/app.js?v=20260517b" defer></script>
   </body>
 </html>
