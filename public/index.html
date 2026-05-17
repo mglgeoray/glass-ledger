@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517e" />
+    <link rel="stylesheet" href="/styles.css?v=20260517g" />
   </head>
   <body>
     <div class="grain"></div>
@@ -36,6 +36,15 @@
           <h2 id="productTitle">1370 x 2200 x 4 мм</h2>
         </div>
         <p id="productMeta">Импортын эхний мөрөө оруулмагц нийт нөөц автоматаар тооцогдоно.</p>
+      </section>
+
+      <section class="seller-quick-panel seller-only">
+        <div>
+          <p class="eyebrow">БОРЛУУЛАГЧИЙН ХУРДАН ҮЙЛДЭЛ</p>
+          <h2>Шинэ борлуулалт</h2>
+          <p id="sellerQuickHint">Сонгосон шилний төрөл дээр шинэ борлуулалтын мөр шууд нэмнэ.</p>
+        </div>
+        <button class="primary-button" id="quickAddEntryButton" type="button">+ Шинэ борлуулалт нэмэх</button>
       </section>
 
       <section class="dashboard-panel hidden" id="dashboardPanel">
@@ -734,6 +743,7 @@
       </section>
 
       <section class="table-card">
+        <div class="entry-card-list" id="entryCardList"></div>
         <div class="table-scroll">
           <table>
             <thead>
@@ -895,6 +905,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517e" defer></script>
+    <script src="/app.js?v=20260517g" defer></script>
   </body>
 </html>

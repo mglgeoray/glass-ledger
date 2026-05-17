@@ -43,6 +43,14 @@ body.seller-view .seller-hidden {
   display: none !important;
 }
 
+.seller-only {
+  display: none !important;
+}
+
+body.seller-view .seller-only {
+  display: flex !important;
+}
+
 button,
 input,
 select,
@@ -259,6 +267,27 @@ h1 {
   font-size: 0.82rem;
   letter-spacing: 0.22rem;
   color: var(--warm);
+}
+
+.seller-quick-panel {
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 155, 142, 0.16);
+  background: linear-gradient(160deg, rgba(15, 155, 142, 0.12), rgba(255, 255, 255, 0.88));
+  box-shadow: var(--shadow);
+}
+
+.seller-quick-panel h2 {
+  margin-bottom: 8px;
+}
+
+.seller-quick-panel p:last-child {
+  margin: 0;
+  color: var(--muted);
 }
 
 #productMeta {
@@ -553,6 +582,68 @@ h1 {
   margin-top: 18px;
   border-radius: 28px;
   overflow: hidden;
+}
+
+.entry-card-list {
+  display: none;
+  gap: 12px;
+  padding: 14px;
+}
+
+.entry-mobile-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 47, 62, 0.08);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.entry-mobile-card.empty-card {
+  color: var(--muted);
+  text-align: center;
+}
+
+.entry-card-top,
+.entry-card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.entry-card-top span,
+.entry-card-foot span,
+.entry-card-grid span {
+  color: var(--muted);
+}
+
+.entry-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.entry-card-grid div {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(252, 248, 241, 0.88);
+}
+
+.entry-card-grid span,
+.entry-card-grid strong {
+  display: block;
+}
+
+.entry-card-grid strong {
+  margin-top: 5px;
+}
+
+.warning-text {
+  color: var(--warning);
+}
+
+.success-text {
+  color: var(--accent);
 }
 
 .table-scroll {
@@ -1001,6 +1092,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .seller-quick-panel,
   .dashboard-header,
   .subpanel-header,
   .toolbar,
@@ -1012,6 +1104,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .seller-quick-panel,
   .dashboard-panel,
   .toolbar,
   .editor-zone,
@@ -1046,6 +1139,10 @@ textarea:focus {
     max-height: none;
     width: 100%;
   }
+
+  .entry-card-list {
+    display: grid;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1066,6 +1163,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .seller-quick-panel,
   .progress-card,
   .toolbar,
   .editor-zone,
@@ -1078,6 +1176,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .seller-quick-panel,
   .toolbar,
   .dashboard-panel,
   .editor-zone,
@@ -1110,6 +1209,11 @@ textarea:focus {
 
   .modal-actions {
     flex-direction: column-reverse;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 12px 0 2px;
+    background: linear-gradient(180deg, rgba(255, 252, 247, 0), var(--paper-strong) 34%);
   }
 
   .payment-editor {
@@ -1125,9 +1229,20 @@ textarea:focus {
   input,
   select,
   textarea {
-    min-height: 48px;
+    min-height: 52px;
     border-radius: 12px;
     padding: 12px 14px;
+  }
+
+  .entry-form input,
+  .entry-form select,
+  .entry-form textarea {
+    min-height: 56px;
+    font-size: 1.05rem;
+  }
+
+  .entry-form label {
+    gap: 8px;
   }
 
   .table-scroll {

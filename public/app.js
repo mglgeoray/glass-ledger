@@ -59,6 +59,7 @@ const elements = {
   editorZone: document.querySelector("#editorZone"),
   entryForm: document.querySelector("#entryForm"),
   entryId: document.querySelector("#entryId"),
+  entryCardList: document.querySelector("#entryCardList"),
   entryMessage: document.querySelector("#entryMessage"),
   entryModal: document.querySelector("#entryModal"),
   entryTableBody: document.querySelector("#entryTableBody"),
@@ -131,7 +132,9 @@ const elements = {
   purchaseSummaryText: document.querySelector("#purchaseSummaryText"),
   purchaseSupplierInput: document.querySelector("#purchaseSupplierInput"),
   quantityInput: document.querySelector("#quantityInput"),
+  quickAddEntryButton: document.querySelector("#quickAddEntryButton"),
   receivableValue: document.querySelector("#receivableValue"),
+  sellerQuickHint: document.querySelector("#sellerQuickHint"),
   receivableSummaryText: document.querySelector("#receivableSummaryText"),
   receivableTableBody: document.querySelector("#receivableTableBody"),
   recorderHint: document.querySelector("#recorderHint"),
@@ -181,6 +184,7 @@ function bindEvents() {
   elements.loginForm.addEventListener("submit", handleLoginSubmit);
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.addEntryButton.addEventListener("click", openNewEntryModal);
+  elements.quickAddEntryButton.addEventListener("click", openNewEntryModal);
   elements.addPaymentPartButton.addEventListener("click", handleAddPaymentPart);
   elements.cancelModalButton.addEventListener("click", closeEntryModal);
   elements.closeModalButton.addEventListener("click", closeEntryModal);
@@ -355,6 +359,7 @@ function renderRole() {
   document.body.classList.toggle("seller-view", isManager());
   elements.addEntryButton.hidden = !canCreateSalesEntry();
   elements.addEntryButton.disabled = canCreateSalesEntry() && !canOpenNewSalesEntry();
+  elements.quickAddEntryButton.disabled = canCreateSalesEntry() && !canOpenNewSalesEntry();
 
   const activeStats = getActiveInventoryStats();
   if (canCreateSalesEntry() && activeStats && activeStats.remainingPieces <= 0) {
@@ -387,6 +392,9 @@ function renderRole() {
     } else {
       showToolbarMessage("Та борлуулагчаар нэвтэрсэн байна. Шинэ борлуулалтын мэдээлэл оруулах боломжтой.");
     }
+    elements.sellerQuickHint.textContent = activeStats?.remainingPieces > 0
+      ? `Одоогийн боломжит үлдэгдэл: ${formatNumber(activeStats.remainingPieces)} ширхэг.`
+      : "Энэ төрөл дээр үлдэгдэл алга байна. ADMIN импорт нэмсний дараа борлуулалт бүртгэнэ.";
   } else {
     showToolbarMessage("Кодоор нэвтэрч байж үлдэгдэл, борлуулалтын мэдээллийг харна.");
   }
@@ -908,12 +916,14 @@ function renderEntryTable() {
   if (!product) {
     elements.entryTableBody.innerHTML =
       `<tr class="empty-state"><td colspan="${visibleColumnCount}">Бүтээгдэхүүний мэдээлэл байхгүй байна.</td></tr>`;
+    renderEntryCards([]);
     return;
   }
 
   if (state.role === "guest") {
     elements.entryTableBody.innerHTML =
       '<tr class="empty-state"><td colspan="13">Өгөгдөл харахын тулд нэвтэрнэ үү.</td></tr>';
+    renderEntryCards([]);
     return;
   }
 
@@ -922,8 +932,11 @@ function renderEntryTable() {
     elements.entryTableBody.innerHTML = `<tr class="empty-state"><td colspan="${visibleColumnCount}">${
       canCreateSalesEntry() ? "Борлуулалтын мөр алга байна. Шинэ мөр нэмээд эхэлнэ үү." : "Одоогоор борлуулалтын бүртгэл алга байна."
     }</td></tr>`;
+    renderEntryCards([]);
     return;
   }
+
+  renderEntryCards(productEntries);
 
   elements.entryTableBody.innerHTML = productEntries
     .map((entry, index) => {
@@ -961,6 +974,57 @@ function renderEntryTable() {
           <td>${escapeHtml(entry.note || "—")}</td>
           <td>${actionCell}</td>
         </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderEntryCards(entries) {
+  if (!elements.entryCardList) {
+    return;
+  }
+
+  if (state.role === "guest") {
+    elements.entryCardList.innerHTML = "";
+    return;
+  }
+
+  if (!entries.length) {
+    elements.entryCardList.innerHTML = `<article class="entry-mobile-card empty-card">${
+      canCreateSalesEntry() ? "Шинэ борлуулалт нэмээд эхэлнэ үү." : "Одоогоор борлуулалтын бүртгэл алга байна."
+    }</article>`;
+    return;
+  }
+
+  elements.entryCardList.innerHTML = entries
+    .map((entry, index) => {
+      const receivableAmount = getEntryReceivableAmount(entry);
+      const paidAmount = getEntryPaidAmount(entry);
+      const actionCell = isAdmin()
+        ? `<button class="inline-button" type="button" data-action="edit-entry" data-entry-id="${entry.id}">Засах</button>`
+        : "";
+
+      return `
+        <article class="entry-mobile-card">
+          <div class="entry-card-top">
+            <strong>${index + 1}. ${escapeHtml(entry.customer)}</strong>
+            <span>${escapeHtml(entry.date)}</span>
+          </div>
+          <div class="entry-card-grid">
+            <div><span>Тоо</span><strong>${formatNumber(entry.quantity)} ш</strong></div>
+            <div><span>Нэгж үнэ</span><strong>${formatMoney(entry.unitPrice)} ₮</strong></div>
+            <div><span>Авлага</span><strong class="${receivableAmount <= 0 ? "success-text" : "warning-text"}">${formatMoney(receivableAmount)} ₮</strong></div>
+            ${
+              isManager()
+                ? ""
+                : `<div><span>Төлсөн</span><strong>${formatMoney(paidAmount)} ₮</strong></div>`
+            }
+          </div>
+          <div class="entry-card-foot">
+            <span>${escapeHtml(entry.crateLabel || "Авдаргүй")}</span>
+            ${actionCell}
+          </div>
+        </article>
       `;
     })
     .join("");
