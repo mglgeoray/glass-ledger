@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517d" />
+    <link rel="stylesheet" href="/styles.css?v=20260517e" />
   </head>
   <body>
     <div class="grain"></div>
@@ -64,9 +64,19 @@
             <small id="dashboardReceivableCount">0 мөр</small>
           </article>
           <article class="dashboard-card accent seller-hidden">
-            <span>Цэвэр ашиг</span>
+            <span>Цалингийн өмнөх ашиг</span>
+            <strong id="dashboardGrossProfit">0 ₮</strong>
+            <small>Бүх төрлийн нийлбэр</small>
+          </article>
+          <article class="dashboard-card warning seller-hidden">
+            <span>Нийт цалин</span>
+            <strong id="dashboardSalaryExpense">0 ₮</strong>
+            <small>Бүх төрөлд хамаарна</small>
+          </article>
+          <article class="dashboard-card accent seller-hidden">
+            <span>Цалингийн дараах ашиг</span>
             <strong id="dashboardNetProfit">0 ₮</strong>
-            <small>Цалин, өртөг шингэсэн</small>
+            <small>Нийт бизнесийн дүн</small>
           </article>
           <article class="dashboard-card danger">
             <span>Нөөцийн анхааруулга</span>
@@ -268,15 +278,15 @@
                 <strong id="remainingCostValue">0 ₮</strong>
               </article>
               <article class="mini-card">
-                <span>Цалингийн өмнөх ашиг</span>
+                <span>Борлуулалтын ашиг</span>
                 <strong id="grossProfitValue">0 ₮</strong>
               </article>
               <article class="mini-card warning">
-                <span>Цалингийн зардал</span>
+                <span>Нийт цалин</span>
                 <strong id="salaryExpenseValue">0 ₮</strong>
               </article>
               <article class="mini-card accent">
-                <span>Цэвэр ашиг</span>
+                <span>Энэ төрлийн ашиг</span>
                 <strong id="netProfitValue">0 ₮</strong>
               </article>
             </div>
@@ -885,6 +895,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517d" defer></script>
+    <script src="/app.js?v=20260517e" defer></script>
   </body>
 </html>

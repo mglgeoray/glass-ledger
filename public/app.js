@@ -40,6 +40,7 @@ const elements = {
   damageTableBody: document.querySelector("#damageTableBody"),
   damagedValue: document.querySelector("#damagedValue"),
   dashboardHint: document.querySelector("#dashboardHint"),
+  dashboardGrossProfit: document.querySelector("#dashboardGrossProfit"),
   dashboardLowStockCount: document.querySelector("#dashboardLowStockCount"),
   dashboardLowStockText: document.querySelector("#dashboardLowStockText"),
   dashboardMonthCount: document.querySelector("#dashboardMonthCount"),
@@ -48,6 +49,7 @@ const elements = {
   dashboardPanel: document.querySelector("#dashboardPanel"),
   dashboardReceivable: document.querySelector("#dashboardReceivable"),
   dashboardReceivableCount: document.querySelector("#dashboardReceivableCount"),
+  dashboardSalaryExpense: document.querySelector("#dashboardSalaryExpense"),
   dashboardTodayCount: document.querySelector("#dashboardTodayCount"),
   dashboardTodaySales: document.querySelector("#dashboardTodaySales"),
   dateInput: document.querySelector("#dateInput"),
@@ -460,13 +462,15 @@ function renderDashboard() {
   elements.dashboardMonthCount.textContent = `${formatNumber(metrics.monthCount)} мөр`;
   elements.dashboardReceivable.textContent = `${formatMoney(metrics.receivableTotal)} ₮`;
   elements.dashboardReceivableCount.textContent = `${formatNumber(metrics.receivableEntryCount)} мөр`;
+  elements.dashboardGrossProfit.textContent = `${formatMoney(metrics.grossProfit)} ₮`;
+  elements.dashboardSalaryExpense.textContent = `${formatMoney(metrics.salaryExpense)} ₮`;
   elements.dashboardNetProfit.textContent = `${formatMoney(metrics.netProfit)} ₮`;
   elements.dashboardNetProfit.style.color = metrics.netProfit < 0 ? "var(--danger)" : "var(--accent)";
   elements.dashboardLowStockCount.textContent = formatNumber(metrics.stockAlerts.length);
   elements.dashboardLowStockText.textContent = metrics.stockAlerts.length ? "Нөөц шалгах шаардлагатай" : "Бүх төрөл хэвийн";
   elements.dashboardHint.textContent = isManager()
     ? "Борлуулагчид авлага болон нөөцийн анхааруулга төвлөрч харагдана."
-    : "Борлуулалт, авлага, ашиг болон нөөцийн эрсдэл нэг дор харагдана.";
+    : "Борлуулалт, авлага, нийт цалин, ашиг болон нөөцийн эрсдэл нэг дор харагдана.";
 
   renderReceivableDashboard(metrics.receivables);
   renderStockAlerts(metrics.stockAlerts);
@@ -689,7 +693,7 @@ function renderProfitPanel() {
   elements.damageCostValue.textContent = `${formatMoney(summary.damageCost)} ₮`;
   elements.remainingCostValue.textContent = `${formatMoney(summary.remainingCost)} ₮`;
   elements.grossProfitValue.textContent = `${formatMoney(summary.grossProfit)} ₮`;
-  elements.salaryExpenseValue.textContent = `${formatMoney(summary.salaryExpense)} ₮`;
+  elements.salaryExpenseValue.textContent = `${formatMoney(state.businessSummary?.salaryExpense || 0)} ₮`;
   elements.netProfitValue.textContent = `${formatMoney(summary.netProfit)} ₮`;
   elements.netProfitValue.style.color = summary.netProfit < 0 ? "var(--danger)" : "var(--accent)";
   elements.profitMarginValue.textContent = `${summary.marginPercent.toFixed(1)}%`;
@@ -706,15 +710,13 @@ function renderProfitPanel() {
   } else if (summary.damageCost > 0) {
     elements.profitHint.textContent = `Борлуулалтын дүнгээс ${formatMoney(summary.soldCost)} ₮ борлуулсан өртөг, ${formatMoney(
       summary.damageCost,
-    )} ₮ гэмтлийн өртөг, ${formatMoney(summary.salaryExpense)} ₮ цалингийн зардал хасагдаж, цэвэр ашиг ${formatMoney(summary.netProfit)} ₮ болж байна.`;
+    )} ₮ гэмтлийн өртөг хасагдаж, энэ төрлийн ашиг ${formatMoney(summary.netProfit)} ₮ болж байна. Цалин нийт бизнесийн ашиг дээр тусдаа хасагдана.`;
   } else if (summary.netProfit >= 0) {
-    elements.profitHint.textContent = `Одоогийн борлуулалтаар ${formatMoney(summary.netProfit)} ₮ цэвэр ашигтай байна. Цалин ${formatMoney(
-      summary.salaryExpense,
-    )} ₮-өөр хувь тэнцүүлэн шингэсэн. Үлдэгдэл нөөцийн өртөг ${formatMoney(
+    elements.profitHint.textContent = `Одоогийн борлуулалтаар энэ төрөл ${formatMoney(summary.netProfit)} ₮ ашигтай байна. Цалин бүх төрөлд хамаарах ерөнхий зардал тул dashboard дээр нийт ашиг дээрээс хасагдана. Үлдэгдэл нөөцийн өртөг ${formatMoney(
       summary.remainingCost,
     )} ₮ гэж тооцогдож байна.`;
   } else {
-    elements.profitHint.textContent = `Одоогийн борлуулалтаар ${formatMoney(Math.abs(summary.netProfit))} ₮ алдагдалтай байна. Импортын өртөг, цалин болон борлуулалтын үнээ шалгана уу.`;
+    elements.profitHint.textContent = `Одоогийн борлуулалтаар энэ төрөл ${formatMoney(Math.abs(summary.netProfit))} ₮ алдагдалтай байна. Импортын өртөг болон борлуулалтын үнээ шалгана уу.`;
   }
 }
 
@@ -1181,6 +1183,8 @@ function buildDashboardMetrics() {
     receivableEntryCount,
     receivables,
     stockAlerts,
+    grossProfit: Number(state.businessSummary?.grossProfit || 0),
+    salaryExpense: Number(state.businessSummary?.salaryExpense || 0),
     netProfit: Number(state.businessSummary?.netProfit || 0),
   };
 }

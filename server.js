@@ -995,8 +995,7 @@ function getProfitSummaryForProduct(store, productId) {
   const damageCost = pieceCost * stats.damagedPieces;
   const remainingCost = pieceCost * stats.remainingPieces;
   const grossProfit = stats.billed - soldCost - damageCost;
-  const salaryExpense = getAllocatedSalaryExpense(store, productId);
-  const netProfit = grossProfit - salaryExpense;
+  const netProfit = grossProfit;
   const marginPercent = stats.billed > 0 ? (netProfit / stats.billed) * 100 : 0;
 
   return {
@@ -1007,7 +1006,7 @@ function getProfitSummaryForProduct(store, productId) {
     damageCost: Number(damageCost.toFixed(2)),
     remainingCost: Number(remainingCost.toFixed(2)),
     grossProfit: Number(grossProfit.toFixed(2)),
-    salaryExpense: Number(salaryExpense.toFixed(2)),
+    salaryExpense: 0,
     netProfit: Number(netProfit.toFixed(2)),
     marginPercent: Number(marginPercent.toFixed(2)),
     billed: stats.billed,
@@ -1020,24 +1019,6 @@ function getSalaryExpenseTotal(store) {
       .reduce((sum, record) => sum + Number(record.amount || 0), 0)
       .toFixed(2),
   );
-}
-
-function getTotalBilledAmount(store) {
-  return Number(store.entries.reduce((sum, entry) => sum + Number(entry.totalAmount || 0), 0).toFixed(2));
-}
-
-function getAllocatedSalaryExpense(store, productId) {
-  const salaryExpense = getSalaryExpenseTotal(store);
-  const totalBilled = getTotalBilledAmount(store);
-  if (!salaryExpense || !totalBilled) {
-    return 0;
-  }
-
-  const productBilled = store.entries
-    .filter((entry) => entry.productId === productId)
-    .reduce((sum, entry) => sum + Number(entry.totalAmount || 0), 0);
-
-  return Number(((salaryExpense * productBilled) / totalBilled).toFixed(2));
 }
 
 function buildBusinessSummary(store) {
