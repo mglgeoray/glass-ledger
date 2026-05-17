@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517c" />
+    <link rel="stylesheet" href="/styles.css?v=20260517d" />
   </head>
   <body>
     <div class="grain"></div>
@@ -36,6 +36,74 @@
           <h2 id="productTitle">1370 x 2200 x 4 мм</h2>
         </div>
         <p id="productMeta">Импортын эхний мөрөө оруулмагц нийт нөөц автоматаар тооцогдоно.</p>
+      </section>
+
+      <section class="dashboard-panel hidden" id="dashboardPanel">
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">УДИРДЛАГЫН САМБАР</p>
+            <h2>Өнөөдрийн зураглал</h2>
+          </div>
+          <p class="dashboard-copy" id="dashboardHint">Борлуулалт, авлага, үлдэгдлийн гол үзүүлэлтүүд энд нэг дор харагдана.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="dashboard-card seller-hidden">
+            <span>Өнөөдрийн борлуулалт</span>
+            <strong id="dashboardTodaySales">0 ₮</strong>
+            <small id="dashboardTodayCount">0 мөр</small>
+          </article>
+          <article class="dashboard-card seller-hidden">
+            <span>Энэ сарын борлуулалт</span>
+            <strong id="dashboardMonthSales">0 ₮</strong>
+            <small id="dashboardMonthCount">0 мөр</small>
+          </article>
+          <article class="dashboard-card warning">
+            <span>Нийт авлага</span>
+            <strong id="dashboardReceivable">0 ₮</strong>
+            <small id="dashboardReceivableCount">0 мөр</small>
+          </article>
+          <article class="dashboard-card accent seller-hidden">
+            <span>Цэвэр ашиг</span>
+            <strong id="dashboardNetProfit">0 ₮</strong>
+            <small>Цалин, өртөг шингэсэн</small>
+          </article>
+          <article class="dashboard-card danger">
+            <span>Нөөцийн анхааруулга</span>
+            <strong id="dashboardLowStockCount">0</strong>
+            <small id="dashboardLowStockText">Бүх төрөл хэвийн</small>
+          </article>
+        </div>
+
+        <div class="dashboard-split">
+          <article class="dashboard-subpanel">
+            <div class="subpanel-header">
+              <h3>Авлагын товчоо</h3>
+              <span id="receivableSummaryText">Авлага алга байна.</span>
+            </div>
+            <div class="table-scroll compact-table-scroll">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>Харилцагч</th>
+                    <th>Авлага (₮)</th>
+                    <th>Мөр</th>
+                    <th>Сүүлийн огноо</th>
+                  </tr>
+                </thead>
+                <tbody id="receivableTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="dashboard-subpanel">
+            <div class="subpanel-header">
+              <h3>Нөөцийн анхааруулга</h3>
+              <span id="stockAlertSummaryText">Анхаарах зүйл алга.</span>
+            </div>
+            <div class="alert-list" id="stockAlertList"></div>
+          </article>
+        </div>
       </section>
 
       <section class="summary-grid" id="summaryGrid">
@@ -817,6 +885,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517c" defer></script>
+    <script src="/app.js?v=20260517d" defer></script>
   </body>
 </html>

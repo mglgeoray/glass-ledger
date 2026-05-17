@@ -39,6 +39,17 @@ const elements = {
   damageSummaryText: document.querySelector("#damageSummaryText"),
   damageTableBody: document.querySelector("#damageTableBody"),
   damagedValue: document.querySelector("#damagedValue"),
+  dashboardHint: document.querySelector("#dashboardHint"),
+  dashboardLowStockCount: document.querySelector("#dashboardLowStockCount"),
+  dashboardLowStockText: document.querySelector("#dashboardLowStockText"),
+  dashboardMonthCount: document.querySelector("#dashboardMonthCount"),
+  dashboardMonthSales: document.querySelector("#dashboardMonthSales"),
+  dashboardNetProfit: document.querySelector("#dashboardNetProfit"),
+  dashboardPanel: document.querySelector("#dashboardPanel"),
+  dashboardReceivable: document.querySelector("#dashboardReceivable"),
+  dashboardReceivableCount: document.querySelector("#dashboardReceivableCount"),
+  dashboardTodayCount: document.querySelector("#dashboardTodayCount"),
+  dashboardTodaySales: document.querySelector("#dashboardTodaySales"),
   dateInput: document.querySelector("#dateInput"),
   editorZoneEyebrow: document.querySelector("#editorZoneEyebrow"),
   editorZoneTitle: document.querySelector("#editorZoneTitle"),
@@ -119,6 +130,8 @@ const elements = {
   purchaseSupplierInput: document.querySelector("#purchaseSupplierInput"),
   quantityInput: document.querySelector("#quantityInput"),
   receivableValue: document.querySelector("#receivableValue"),
+  receivableSummaryText: document.querySelector("#receivableSummaryText"),
+  receivableTableBody: document.querySelector("#receivableTableBody"),
   recorderHint: document.querySelector("#recorderHint"),
   recorderNameInput: document.querySelector("#recorderNameInput"),
   remainingCostValue: document.querySelector("#remainingCostValue"),
@@ -145,6 +158,8 @@ const elements = {
   salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
+  stockAlertList: document.querySelector("#stockAlertList"),
+  stockAlertSummaryText: document.querySelector("#stockAlertSummaryText"),
   taxCostInput: document.querySelector("#taxCostInput"),
   toolbarCopy: document.querySelector("#toolbarCopy"),
   transportCostInput: document.querySelector("#transportCostInput"),
@@ -316,6 +331,7 @@ function render() {
   renderRole();
   renderTabs();
   renderInventoryMeta();
+  renderDashboard();
   renderSummary();
   renderProgress();
   renderEntryTable();
@@ -428,6 +444,79 @@ function renderInventoryMeta() {
   }
 
   elements.productMeta.textContent = metaParts.join(" • ");
+}
+
+function renderDashboard() {
+  const canViewDashboard = isAdmin() || isManager();
+  elements.dashboardPanel.classList.toggle("hidden", !canViewDashboard);
+  if (!canViewDashboard) {
+    return;
+  }
+
+  const metrics = buildDashboardMetrics();
+  elements.dashboardTodaySales.textContent = `${formatMoney(metrics.todaySales)} ₮`;
+  elements.dashboardTodayCount.textContent = `${formatNumber(metrics.todayCount)} мөр`;
+  elements.dashboardMonthSales.textContent = `${formatMoney(metrics.monthSales)} ₮`;
+  elements.dashboardMonthCount.textContent = `${formatNumber(metrics.monthCount)} мөр`;
+  elements.dashboardReceivable.textContent = `${formatMoney(metrics.receivableTotal)} ₮`;
+  elements.dashboardReceivableCount.textContent = `${formatNumber(metrics.receivableEntryCount)} мөр`;
+  elements.dashboardNetProfit.textContent = `${formatMoney(metrics.netProfit)} ₮`;
+  elements.dashboardNetProfit.style.color = metrics.netProfit < 0 ? "var(--danger)" : "var(--accent)";
+  elements.dashboardLowStockCount.textContent = formatNumber(metrics.stockAlerts.length);
+  elements.dashboardLowStockText.textContent = metrics.stockAlerts.length ? "Нөөц шалгах шаардлагатай" : "Бүх төрөл хэвийн";
+  elements.dashboardHint.textContent = isManager()
+    ? "Борлуулагчид авлага болон нөөцийн анхааруулга төвлөрч харагдана."
+    : "Борлуулалт, авлага, ашиг болон нөөцийн эрсдэл нэг дор харагдана.";
+
+  renderReceivableDashboard(metrics.receivables);
+  renderStockAlerts(metrics.stockAlerts);
+}
+
+function renderReceivableDashboard(receivables) {
+  const total = receivables.reduce((sum, item) => sum + item.amount, 0);
+  elements.receivableSummaryText.textContent = receivables.length
+    ? `${formatNumber(receivables.length)} харилцагч • ${formatMoney(total)} ₮`
+    : "Авлага алга байна.";
+
+  if (!receivables.length) {
+    elements.receivableTableBody.innerHTML = '<tr class="empty-state"><td colspan="4">Авлагатай харилцагч алга байна.</td></tr>';
+    return;
+  }
+
+  elements.receivableTableBody.innerHTML = receivables
+    .map(
+      (item) => `
+        <tr>
+          <td>${escapeHtml(item.customer)}</td>
+          <td class="money-cell">${formatMoney(item.amount)}</td>
+          <td class="quantity-cell">${formatNumber(item.count)}</td>
+          <td>${escapeHtml(item.latestDate)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function renderStockAlerts(alerts) {
+  elements.stockAlertSummaryText.textContent = alerts.length
+    ? `${formatNumber(alerts.length)} төрлийн нөөц анхаарах түвшинд байна.`
+    : "Анхаарах зүйл алга.";
+
+  if (!alerts.length) {
+    elements.stockAlertList.innerHTML = '<p class="alert-empty">Нөөцийн доод түвшинд хүрсэн шил алга байна.</p>';
+    return;
+  }
+
+  elements.stockAlertList.innerHTML = alerts
+    .map(
+      (alert) => `
+        <div class="alert-item ${alert.remainingPieces <= 0 ? "danger" : ""}">
+          <strong>${escapeHtml(alert.productName)}</strong>
+          <span>${formatNumber(alert.remainingPieces)} ширхэг үлдсэн • босго ${formatNumber(alert.threshold)} ширхэг</span>
+        </div>
+      `,
+    )
+    .join("");
 }
 
 function renderSummary() {
@@ -1017,6 +1106,83 @@ function getTodayDateValue() {
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function getCurrentMonthValue() {
+  return getTodayDateValue().slice(0, 7);
+}
+
+function buildDashboardMetrics() {
+  const today = getTodayDateValue();
+  const month = getCurrentMonthValue();
+  const receivableMap = new Map();
+  const stockAlerts = [];
+  let todaySales = 0;
+  let todayCount = 0;
+  let monthSales = 0;
+  let monthCount = 0;
+  let receivableTotal = 0;
+  let receivableEntryCount = 0;
+
+  for (const entry of state.entries) {
+    const totalAmount = Number(entry.totalAmount || 0);
+    if (entry.date === today) {
+      todaySales += totalAmount;
+      todayCount += 1;
+    }
+
+    if (String(entry.date || "").slice(0, 7) === month) {
+      monthSales += totalAmount;
+      monthCount += 1;
+    }
+
+    const receivable = getEntryReceivableAmount(entry);
+    if (receivable > 0.009) {
+      receivableTotal += receivable;
+      receivableEntryCount += 1;
+      const customer = entry.customer || "Нэргүй харилцагч";
+      const existing = receivableMap.get(customer) || {
+        customer,
+        amount: 0,
+        count: 0,
+        latestDate: entry.date || "",
+      };
+      existing.amount += receivable;
+      existing.count += 1;
+      existing.latestDate = String(entry.date || "").localeCompare(existing.latestDate) > 0 ? entry.date : existing.latestDate;
+      receivableMap.set(customer, existing);
+    }
+  }
+
+  for (const product of state.products) {
+    const stats = getInventoryStats(product.id);
+    const threshold = Math.max(Number(product.defaultPiecesPerCrate || 0), 1);
+    if (stats.importedPieces > 0 && stats.remainingPieces <= threshold) {
+      stockAlerts.push({
+        productName: product.name,
+        remainingPieces: stats.remainingPieces,
+        threshold,
+      });
+    }
+  }
+
+  const receivables = [...receivableMap.values()]
+    .map((item) => ({ ...item, amount: Number(item.amount.toFixed(2)) }))
+    .sort((left, right) => right.amount - left.amount || right.latestDate.localeCompare(left.latestDate));
+
+  stockAlerts.sort((left, right) => left.remainingPieces - right.remainingPieces || left.productName.localeCompare(right.productName));
+
+  return {
+    todaySales: Number(todaySales.toFixed(2)),
+    todayCount,
+    monthSales: Number(monthSales.toFixed(2)),
+    monthCount,
+    receivableTotal: Number(receivableTotal.toFixed(2)),
+    receivableEntryCount,
+    receivables,
+    stockAlerts,
+    netProfit: Number(state.businessSummary?.netProfit || 0),
+  };
 }
 
 function getEntryPayments(entry) {
