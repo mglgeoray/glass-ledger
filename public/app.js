@@ -719,11 +719,11 @@ function renderSellerWorkspace() {
   elements.sellerStockText.textContent = `${formatNumber(stats.remainingPieces)} ш`;
   elements.sellerReceivableList.innerHTML = renderSellerMiniEntryList(
     receivableEntries,
-    "Одоогоор таны авлагатай мөр алга байна.",
+    "Одоогоор авлагатай мөр алга байна.",
   );
   elements.sellerTodayList.innerHTML = renderSellerMiniEntryList(
     todayEntries,
-    "Өнөөдөр таны оруулсан борлуулалт алга байна.",
+    "Өнөөдөр борлуулалт алга байна.",
   );
   elements.sellerStockPills.innerHTML = state.products
     .map((item) => {
@@ -1460,22 +1460,12 @@ function getProfitSummary(productId) {
 
 function getEntriesForProduct(productId) {
   return [...state.entries]
-    .filter((entry) => entry.productId === productId && isEntryVisibleToCurrentUser(entry))
+    .filter((entry) => entry.productId === productId)
     .sort((left, right) => {
       const leftKey = `${left.date}|${left.createdAt}|${left.id}`;
       const rightKey = `${right.date}|${right.createdAt}|${right.id}`;
       return leftKey.localeCompare(rightKey);
     });
-}
-
-function isEntryVisibleToCurrentUser(entry) {
-  if (!isManager()) {
-    return true;
-  }
-
-  const currentName = String(state.currentUserName || "").trim().toLowerCase();
-  const recordedName = String(entry.recordedByName || "").trim().toLowerCase();
-  return Boolean(currentName) && recordedName === currentName;
 }
 
 function getImportBatchesForProduct(productId) {
