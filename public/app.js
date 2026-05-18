@@ -32,6 +32,7 @@ const elements = {
   cashFormulaValue: document.querySelector("#cashFormulaValue"),
   cancelModalButton: document.querySelector("#cancelModalButton"),
   closeModalButton: document.querySelector("#closeModalButton"),
+  closeSellerDetailButton: document.querySelector("#closeSellerDetailButton"),
   collectedValue: document.querySelector("#collectedValue"),
   customerInput: document.querySelector("#customerInput"),
   customerSummaryText: document.querySelector("#customerSummaryText"),
@@ -191,6 +192,9 @@ const elements = {
   salarySummaryText: document.querySelector("#salarySummaryText"),
   salaryTableBody: document.querySelector("#salaryTableBody"),
   saveEntryButton: document.querySelector("#saveEntryButton"),
+  sellerDetailBody: document.querySelector("#sellerDetailBody"),
+  sellerDetailModal: document.querySelector("#sellerDetailModal"),
+  sellerDetailTitle: document.querySelector("#sellerDetailTitle"),
   sellerReceivableCount: document.querySelector("#sellerReceivableCount"),
   sellerReceivableList: document.querySelector("#sellerReceivableList"),
   salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
@@ -258,10 +262,13 @@ function bindEvents() {
   elements.quickAddEntryButton.addEventListener("click", openNewEntryModal);
   elements.sellerStockPills?.addEventListener("click", handleSellerStockPillClick);
   elements.sellerSalesPeriodTabs?.addEventListener("click", handleSellerSalesPeriodClick);
+  elements.sellerReceivableList?.addEventListener("click", handleSellerEntryClick);
+  elements.sellerTodayList?.addEventListener("click", handleSellerEntryClick);
   elements.dashboardPeriodTabs.addEventListener("click", handleDashboardPeriodClick);
   elements.addPaymentPartButton.addEventListener("click", handleAddPaymentPart);
   elements.cancelModalButton.addEventListener("click", closeEntryModal);
   elements.closeModalButton.addEventListener("click", closeEntryModal);
+  elements.closeSellerDetailButton?.addEventListener("click", closeSellerDetailModal);
   elements.resetImportBatchButton.addEventListener("click", () => resetImportForm(true));
   elements.resetDamageButton.addEventListener("click", () => resetDamageForm(true));
   elements.resetManagerButton.addEventListener("click", () => resetManagerAccountForm(true));
@@ -272,6 +279,12 @@ function bindEvents() {
   elements.entryModal.addEventListener("click", (event) => {
     if (event.target === elements.entryModal) {
       closeEntryModal();
+    }
+  });
+
+  elements.sellerDetailModal?.addEventListener("click", (event) => {
+    if (event.target === elements.sellerDetailModal) {
+      closeSellerDetailModal();
     }
   });
 
@@ -769,13 +782,13 @@ function renderSellerMiniEntryList(entries, emptyText) {
     .map((entry) => {
       const receivableAmount = getEntryReceivableAmount(entry);
       return `
-        <article class="seller-mini-entry">
+        <button class="seller-mini-entry" type="button" data-entry-id="${escapeHtml(entry.id)}">
           <div>
             <strong>${escapeHtml(entry.customer)}</strong>
             <span>${escapeHtml(entry.date)} · ${formatNumber(entry.quantity)} ш</span>
           </div>
           <strong class="${receivableAmount <= 0 ? "success-text" : "warning-text"}">${formatMoney(receivableAmount)} ₮</strong>
-        </article>
+        </button>
       `;
     })
     .join("");
@@ -2185,6 +2198,57 @@ function handleSellerSalesPeriodClick(event) {
   renderSellerWorkspace();
 }
 
+function handleSellerEntryClick(event) {
+  const button = event.target.closest("[data-entry-id]");
+  if (!button) {
+    return;
+  }
+
+  openSellerEntryDetail(button.dataset.entryId);
+}
+
+function openSellerEntryDetail(entryId) {
+  const entry = state.entries.find((item) => item.id === entryId);
+  if (!entry || !elements.sellerDetailModal) {
+    return;
+  }
+
+  const product = state.products.find((item) => item.id === entry.productId);
+  const receivableAmount = getEntryReceivableAmount(entry);
+  const statusText = receivableAmount <= 0 ? "Төлөгдсөн" : "Авлагатай";
+  elements.sellerDetailTitle.textContent = entry.customer || "Борлуулалт";
+  elements.sellerDetailBody.innerHTML = `
+    <div class="seller-detail-status ${receivableAmount <= 0 ? "settled" : ""}">
+      <span>Төлөв</span>
+      <strong>${escapeHtml(statusText)}</strong>
+    </div>
+    <div class="seller-detail-grid">
+      ${renderSellerDetailItem("Огноо", entry.date)}
+      ${renderSellerDetailItem("Шилний төрөл", product?.name || "—")}
+      ${renderSellerDetailItem("Бүртгэсэн", entry.recordedByName || "ADMIN")}
+      ${renderSellerDetailItem("Тоо ширхэг", `${formatNumber(entry.quantity)} ш`)}
+      ${renderSellerDetailItem("Нэгж үнэ", `${formatMoney(entry.unitPrice)} ₮`)}
+      ${renderSellerDetailItem("Авлага", `${formatMoney(receivableAmount)} ₮`, receivableAmount <= 0 ? "success-text" : "warning-text")}
+      ${renderSellerDetailItem("Авдар", entry.crateLabel || "—")}
+      ${renderSellerDetailItem("Тэмдэглэл", entry.note || "—", "wide")}
+    </div>
+  `;
+  elements.sellerDetailModal.classList.remove("hidden");
+}
+
+function renderSellerDetailItem(label, value, className = "") {
+  return `
+    <div class="seller-detail-item ${className}">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
+}
+
+function closeSellerDetailModal() {
+  elements.sellerDetailModal?.classList.add("hidden");
+}
+
 function updateFormSummary() {
   const productId = elements.productSelect.value;
   const product = state.products.find((item) => item.id === productId);
@@ -2263,6 +2327,7 @@ async function handleLoginSubmit(event) {
 async function handleLogout() {
   await apiFetch("/api/logout", { method: "POST" });
   closeEntryModal();
+  closeSellerDetailModal();
   await refreshBootstrap();
 }
 

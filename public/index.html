@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260518d" />
+    <link rel="stylesheet" href="/styles.css?v=20260518e" />
   </head>
   <body>
     <div class="grain"></div>
@@ -1118,7 +1118,20 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260518d" defer></script>
+    <div class="modal hidden" id="sellerDetailModal">
+      <div class="modal-card seller-detail-modal-card">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">БОРЛУУЛАЛТЫН ДЭЛГЭРЭНГҮЙ</p>
+            <h2 id="sellerDetailTitle">Борлуулалт</h2>
+          </div>
+          <button class="icon-button" id="closeSellerDetailButton" type="button" aria-label="Хаах">×</button>
+        </div>
+        <div class="seller-detail-body" id="sellerDetailBody"></div>
+      </div>
+    </div>
+
+    <script src="/app.js?v=20260518e" defer></script>
   </body>
 </html>
 
