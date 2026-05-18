@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260517j" />
+    <link rel="stylesheet" href="/styles.css?v=20260518b" />
   </head>
   <body>
     <div class="grain"></div>
@@ -170,55 +170,125 @@
         </article>
       </section>
 
-      <section class="summary-grid" id="summaryGrid">
-        <article class="summary-card">
-          <p>Нийт импорт</p>
-          <strong id="importedValue">0</strong>
-          <span>ширхэг</span>
-        </article>
-        <article class="summary-card accent">
-          <p>Борлуулсан</p>
-          <strong id="soldValue">0</strong>
-          <span>ширхэг</span>
-        </article>
-        <article class="summary-card danger">
-          <p>Гэмтэл / хагарал</p>
-          <strong id="damagedValue">0</strong>
-          <span>ширхэг</span>
-        </article>
-        <article class="summary-card">
-          <p>Үлдэгдэл</p>
-          <strong id="remainingValue">0</strong>
-          <span>ширхэг</span>
-        </article>
-        <article class="summary-card seller-hidden">
-          <p>Нийт дүн</p>
-          <strong id="billedValue">0</strong>
-          <span>₮</span>
-        </article>
-        <article class="summary-card accent seller-hidden">
-          <p>Төлсөн</p>
-          <strong id="collectedValue">0</strong>
-          <span>₮</span>
-        </article>
-        <article class="summary-card warning">
-          <p>Үлдэгдэл авлага</p>
-          <strong id="receivableValue">0</strong>
-          <span>₮</span>
-        </article>
-      </section>
+      <section class="ledger-overview" id="summaryGrid">
+        <article class="overview-panel">
+          <div class="overview-panel-header">
+            <div>
+              <p class="inventory-label">НӨӨЦИЙН САМБАР</p>
+              <h3>Агуулахын хөдөлгөөн</h3>
+            </div>
+            <p class="overview-panel-copy" id="stockSummaryText">
+              Импорт бүртгэгдмэгц нийт нөөц, ашиглагдсан тоо, үлдэгдэл энд харагдана.
+            </p>
+          </div>
 
-      <section class="progress-card">
-        <div class="progress-header">
-          <span>Борлуулалтын явц</span>
-          <strong id="progressValue">0%</strong>
-        </div>
-        <p class="toolbar-copy" id="progressCaption">
-          Импортын нөөц орж ирмэгц борлуулсан болон гэмтэлтэй үлдэгдлийн хувь энд харагдана.
-        </p>
-        <div class="progress-track">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
+          <section class="summary-grid">
+            <article class="summary-card">
+              <p>Нийт импорт</p>
+              <strong id="importedValue">0</strong>
+              <span>ширхэг</span>
+            </article>
+            <article class="summary-card accent">
+              <p>Борлуулсан</p>
+              <strong id="soldValue">0</strong>
+              <span>ширхэг</span>
+            </article>
+            <article class="summary-card danger">
+              <p>Гэмтэл / хагарал</p>
+              <strong id="damagedValue">0</strong>
+              <span>ширхэг</span>
+            </article>
+            <article class="summary-card">
+              <p>Үлдэгдэл</p>
+              <strong id="remainingValue">0</strong>
+              <span>ширхэг</span>
+            </article>
+          </section>
+
+          <div class="formula-strip">
+            <article class="formula-card">
+              <span class="formula-label">Үлдэгдлийн томьёо</span>
+              <strong id="stockFormulaValue">0 ш</strong>
+              <p id="stockFormulaText">Үлдэгдэл = Нийт импорт - Борлуулсан - Гэмтэл</p>
+            </article>
+            <article class="formula-card">
+              <span class="formula-label">Сүүлийн импорт</span>
+              <strong id="latestImportValue">—</strong>
+              <p id="latestImportText">Импортын эхний batch бүртгэгдээгүй байна.</p>
+            </article>
+          </div>
+        </article>
+
+        <article class="overview-panel">
+          <div class="overview-panel-header">
+            <div>
+              <p class="inventory-label">БОРЛУУЛАЛТ БА АВЛАГА</p>
+              <h3>Мөнгөн урсгалын зураг</h3>
+            </div>
+            <p class="overview-panel-copy" id="moneySummaryText">
+              Нийт дүн, төлсөн, авлагын тооцоо борлуулалтын мөр бүрээс автоматаар гарна.
+            </p>
+          </div>
+
+          <section class="summary-grid summary-grid-money">
+            <article class="summary-card seller-hidden">
+              <p>Нийт дүн</p>
+              <strong id="billedValue">0</strong>
+              <span>₮</span>
+            </article>
+            <article class="summary-card accent seller-hidden">
+              <p>Төлсөн</p>
+              <strong id="collectedValue">0</strong>
+              <span>₮</span>
+            </article>
+            <article class="summary-card warning">
+              <p>Үлдэгдэл авлага</p>
+              <strong id="receivableValue">0</strong>
+              <span>₮</span>
+            </article>
+          </section>
+
+          <div class="formula-strip">
+            <article class="formula-card">
+              <span class="formula-label">Авлагын томьёо</span>
+              <strong id="cashFormulaValue">0 ₮</strong>
+              <p id="cashFormulaText">Авлага = Нийт дүн - Төлсөн</p>
+            </article>
+            <article class="formula-card">
+              <span class="formula-label">Сүүлийн борлуулалт</span>
+              <strong id="latestSaleValue">—</strong>
+              <p id="latestSaleText">Борлуулалтын мөр ороогүй байна.</p>
+            </article>
+          </div>
+        </article>
+
+        <aside class="overview-aside">
+          <section class="progress-card">
+            <div class="progress-header">
+              <span>Борлуулалтын явц</span>
+              <strong id="progressValue">0%</strong>
+            </div>
+            <p class="toolbar-copy" id="progressCaption">
+              Импортын нөөц орж ирмэгц борлуулсан болон гэмтэлтэй үлдэгдлийн хувь энд харагдана.
+            </p>
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </section>
+
+          <section class="progress-card seller-hidden" id="profitSnapshotCard" hidden>
+            <div class="progress-header">
+              <span>Ашгийн товч төлөв</span>
+              <strong id="profitSnapshotValue">0 ₮</strong>
+            </div>
+            <p class="toolbar-copy" id="profitSnapshotText">
+              ADMIN эрхээр импортын өртөг бүртгэсний дараа 1 ширхэгийн өртөг, ашигийн тойм энд харагдана.
+            </p>
+            <div class="progress-track">
+              <div class="progress-fill" id="profitSnapshotFill"></div>
+            </div>
+          </section>
+        </aside>
       </section>
 
       <section class="editor-zone hidden" id="editorZone">
@@ -836,7 +906,7 @@
 
       <section class="toolbar">
         <div>
-          <p class="toolbar-title">Борлуулалтын мөрүүд</p>
+          <p class="toolbar-title">Борлуулалтын журнал</p>
           <p class="toolbar-copy" id="toolbarCopy">
             Зөвхөн нэвтэрсэн хэрэглэгч өгөгдлийг харна.
           </p>
@@ -1007,6 +1077,7 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260517j" defer></script>
+    <script src="/app.js?v=20260518b" defer></script>
   </body>
 </html>
+
