@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260518b" />
+    <link rel="stylesheet" href="/styles.css?v=20260518c" />
   </head>
   <body>
     <div class="grain"></div>
@@ -45,6 +45,41 @@
           <p id="sellerQuickHint">Сонгосон шилний төрөл дээр шинэ борлуулалтын мөр шууд нэмнэ.</p>
         </div>
         <button class="primary-button" id="quickAddEntryButton" type="button">+ Шинэ борлуулалт нэмэх</button>
+      </section>
+
+      <section class="seller-workspace seller-only" id="sellerWorkspace">
+        <article class="seller-focus-card seller-focus-card-primary">
+          <div class="seller-card-header">
+            <div>
+              <span class="seller-card-label">МИНИЙ АВЛАГА</span>
+              <h3>Төлбөр дутуу мөрүүд</h3>
+            </div>
+            <strong id="sellerReceivableCount">0</strong>
+          </div>
+          <div class="seller-mini-list" id="sellerReceivableList"></div>
+        </article>
+
+        <article class="seller-focus-card">
+          <div class="seller-card-header">
+            <div>
+              <span class="seller-card-label">ӨНӨӨДӨР</span>
+              <h3>Миний оруулсан борлуулалт</h3>
+            </div>
+            <strong id="sellerTodayCount">0</strong>
+          </div>
+          <div class="seller-mini-list" id="sellerTodayList"></div>
+        </article>
+
+        <article class="seller-focus-card seller-stock-card">
+          <div class="seller-card-header">
+            <div>
+              <span class="seller-card-label">ҮЛДЭГДЭЛ</span>
+              <h3>Сонгосон шил</h3>
+            </div>
+            <strong id="sellerStockText">0 ш</strong>
+          </div>
+          <div class="seller-stock-pills" id="sellerStockPills"></div>
+        </article>
       </section>
 
       <section class="dashboard-panel hidden" id="dashboardPanel">
@@ -1077,7 +1112,7 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260518b" defer></script>
+    <script src="/app.js?v=20260518c" defer></script>
   </body>
 </html>
 

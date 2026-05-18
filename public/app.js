@@ -190,7 +190,13 @@ const elements = {
   salarySummaryText: document.querySelector("#salarySummaryText"),
   salaryTableBody: document.querySelector("#salaryTableBody"),
   saveEntryButton: document.querySelector("#saveEntryButton"),
+  sellerReceivableCount: document.querySelector("#sellerReceivableCount"),
+  sellerReceivableList: document.querySelector("#sellerReceivableList"),
   salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
+  sellerStockPills: document.querySelector("#sellerStockPills"),
+  sellerStockText: document.querySelector("#sellerStockText"),
+  sellerTodayCount: document.querySelector("#sellerTodayCount"),
+  sellerTodayList: document.querySelector("#sellerTodayList"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
   stockFormulaText: document.querySelector("#stockFormulaText"),
@@ -247,6 +253,7 @@ function bindEvents() {
   elements.logoutButton.addEventListener("click", handleLogout);
   elements.addEntryButton.addEventListener("click", openNewEntryModal);
   elements.quickAddEntryButton.addEventListener("click", openNewEntryModal);
+  elements.sellerStockPills?.addEventListener("click", handleSellerStockPillClick);
   elements.dashboardPeriodTabs.addEventListener("click", handleDashboardPeriodClick);
   elements.addPaymentPartButton.addEventListener("click", handleAddPaymentPart);
   elements.cancelModalButton.addEventListener("click", closeEntryModal);
@@ -458,13 +465,14 @@ function canOpenNewSalesEntry() {
 }
 
 function canViewMaterialPurchases() {
-  return isAdmin() || isManager();
+  return isAdmin();
 }
 
 function render() {
   renderRole();
   renderTabs();
   renderInventoryMeta();
+  renderSellerWorkspace();
   renderDashboard();
   renderSummary();
   renderOverviewNotes();
@@ -562,6 +570,11 @@ function renderInventoryMeta() {
   const stats = getInventoryStats(product.id);
   elements.productTitle.textContent = product.name;
 
+  if (isManager()) {
+    elements.productMeta.textContent = `Үлдэгдэл: ${formatNumber(stats.remainingPieces)} ширхэг.`;
+    return;
+  }
+
   if (!stats.importedPieces) {
     elements.productMeta.textContent = `Одоогоор импорт бүртгэгдээгүй. 1 авдарт анхны санал болгох утга: ${formatNumber(
       product.defaultPiecesPerCrate || 82,
@@ -587,7 +600,7 @@ function renderInventoryMeta() {
 }
 
 function renderDashboard() {
-  const canViewDashboard = isAdmin() || isManager();
+  const canViewDashboard = isAdmin();
   elements.dashboardPanel.classList.toggle("hidden", !canViewDashboard);
   if (!canViewDashboard) {
     return;
@@ -677,6 +690,73 @@ function renderAttentionItems(items) {
         </div>
       `,
     )
+    .join("");
+}
+
+function renderSellerWorkspace() {
+  if (!elements.sellerReceivableList || !isManager()) {
+    return;
+  }
+
+  const product = getActiveProduct();
+  const entries = product ? getEntriesForProduct(product.id) : [];
+  const today = getTodayDateValue();
+  const todayEntries = entries.filter((entry) => entry.date === today).slice(-5).reverse();
+  const receivableEntries = entries
+    .filter((entry) => getEntryReceivableAmount(entry) > 0.009)
+    .sort((left, right) => {
+      const leftKey = `${left.date}|${left.createdAt}|${left.id}`;
+      const rightKey = `${right.date}|${right.createdAt}|${right.id}`;
+      return rightKey.localeCompare(leftKey);
+    })
+    .slice(0, 6);
+
+  const totalReceivable = receivableEntries.reduce((sum, entry) => sum + getEntryReceivableAmount(entry), 0);
+  const stats = product ? getInventoryStats(product.id) : { remainingPieces: 0 };
+
+  elements.sellerReceivableCount.textContent = `${formatMoney(totalReceivable)} ₮`;
+  elements.sellerTodayCount.textContent = `${formatNumber(todayEntries.length)} мөр`;
+  elements.sellerStockText.textContent = `${formatNumber(stats.remainingPieces)} ш`;
+  elements.sellerReceivableList.innerHTML = renderSellerMiniEntryList(
+    receivableEntries,
+    "Одоогоор таны авлагатай мөр алга байна.",
+  );
+  elements.sellerTodayList.innerHTML = renderSellerMiniEntryList(
+    todayEntries,
+    "Өнөөдөр таны оруулсан борлуулалт алга байна.",
+  );
+  elements.sellerStockPills.innerHTML = state.products
+    .map((item) => {
+      const itemStats = getInventoryStats(item.id);
+      const isActive = item.id === state.activeProductId;
+      return `
+        <button class="seller-stock-pill ${isActive ? "active" : ""}" type="button" data-product-id="${item.id}">
+          <span>${escapeHtml(item.name)}</span>
+          <strong>${formatNumber(itemStats.remainingPieces)} ш</strong>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderSellerMiniEntryList(entries, emptyText) {
+  if (!entries.length) {
+    return `<p class="seller-empty">${escapeHtml(emptyText)}</p>`;
+  }
+
+  return entries
+    .map((entry) => {
+      const receivableAmount = getEntryReceivableAmount(entry);
+      return `
+        <article class="seller-mini-entry">
+          <div>
+            <strong>${escapeHtml(entry.customer)}</strong>
+            <span>${escapeHtml(entry.date)} · ${formatNumber(entry.quantity)} ш</span>
+          </div>
+          <strong class="${receivableAmount <= 0 ? "success-text" : "warning-text"}">${formatMoney(receivableAmount)} ₮</strong>
+        </article>
+      `;
+    })
     .join("");
 }
 
@@ -1380,12 +1460,22 @@ function getProfitSummary(productId) {
 
 function getEntriesForProduct(productId) {
   return [...state.entries]
-    .filter((entry) => entry.productId === productId)
+    .filter((entry) => entry.productId === productId && isEntryVisibleToCurrentUser(entry))
     .sort((left, right) => {
       const leftKey = `${left.date}|${left.createdAt}|${left.id}`;
       const rightKey = `${right.date}|${right.createdAt}|${right.id}`;
       return leftKey.localeCompare(rightKey);
     });
+}
+
+function isEntryVisibleToCurrentUser(entry) {
+  if (!isManager()) {
+    return true;
+  }
+
+  const currentName = String(state.currentUserName || "").trim().toLowerCase();
+  const recordedName = String(entry.recordedByName || "").trim().toLowerCase();
+  return Boolean(currentName) && recordedName === currentName;
 }
 
 function getImportBatchesForProduct(productId) {
@@ -2062,6 +2152,16 @@ function handleDashboardPeriodClick(event) {
 
   state.dashboardPeriod = button.dataset.dashboardPeriod || "today";
   renderDashboard();
+}
+
+function handleSellerStockPillClick(event) {
+  const button = event.target.closest("[data-product-id]");
+  if (!button) {
+    return;
+  }
+
+  state.activeProductId = button.dataset.productId;
+  render();
 }
 
 function updateFormSummary() {
