@@ -76,6 +76,7 @@ textarea {
 
 .hero,
 .inventory-note,
+.overview-panel,
 .progress-card,
 .toolbar,
 .table-card,
@@ -292,6 +293,89 @@ h1 {
 
 #productMeta {
   font-size: 1rem;
+}
+
+.ledger-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 320px);
+  gap: 18px;
+  margin-top: 22px;
+  align-items: start;
+}
+
+.overview-panel {
+  padding: 22px;
+  border-radius: 24px;
+}
+
+.overview-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.overview-panel-copy,
+.formula-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.overview-panel-copy {
+  max-width: 280px;
+  text-align: right;
+}
+
+.overview-panel .summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.overview-panel .summary-grid.summary-grid-money {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.overview-panel .summary-card strong {
+  font-size: clamp(1.8rem, 2.6vw, 2.7rem);
+}
+
+.formula-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.formula-card {
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 47, 62, 0.08);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.formula-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--warm);
+  font-size: 0.8rem;
+  letter-spacing: 0.16rem;
+}
+
+.formula-card strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.overview-aside {
+  display: grid;
+  gap: 18px;
+}
+
+.overview-aside .progress-card {
+  margin-top: 0;
 }
 
 .summary-grid {
@@ -1200,6 +1284,15 @@ textarea:focus {
 }
 
 @media (max-width: 1180px) {
+  .ledger-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-aside {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .editor-grid,
   .finance-stat-grid,
   .dashboard-grid,
@@ -1223,6 +1316,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .overview-panel-header,
   .seller-quick-panel,
   .dashboard-header,
   .dashboard-header-tools,
@@ -1236,12 +1330,23 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .overview-panel,
   .seller-quick-panel,
   .dashboard-panel,
   .toolbar,
   .editor-zone,
   .finance-card {
     padding: 24px 20px;
+  }
+
+  .ledger-overview,
+  .overview-aside {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-panel-copy {
+    max-width: none;
+    text-align: left;
   }
 
   .editor-grid {
@@ -1278,6 +1383,9 @@ textarea:focus {
 }
 
 @media (max-width: 640px) {
+  .overview-panel .summary-grid,
+  .overview-panel .summary-grid.summary-grid-money,
+  .formula-strip,
   .summary-grid,
   .finance-stat-grid,
   .dashboard-grid,
@@ -1296,6 +1404,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .overview-panel,
   .seller-quick-panel,
   .progress-card,
   .toolbar,
@@ -1309,6 +1418,7 @@ textarea:focus {
 
   .hero,
   .inventory-note,
+  .overview-panel,
   .seller-quick-panel,
   .toolbar,
   .dashboard-panel,
@@ -1396,3 +1506,4 @@ textarea:focus {
     padding: 12px 10px;
   }
 }
+
