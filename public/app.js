@@ -27,6 +27,8 @@ const elements = {
   addPaymentPartButton: document.querySelector("#addPaymentPartButton"),
   authLayer: document.querySelector("#authLayer"),
   billedValue: document.querySelector("#billedValue"),
+  cashFormulaText: document.querySelector("#cashFormulaText"),
+  cashFormulaValue: document.querySelector("#cashFormulaValue"),
   cancelModalButton: document.querySelector("#cancelModalButton"),
   closeModalButton: document.querySelector("#closeModalButton"),
   collectedValue: document.querySelector("#collectedValue"),
@@ -94,6 +96,10 @@ const elements = {
   importSupplierInput: document.querySelector("#importSupplierInput"),
   importTotalCostPreview: document.querySelector("#importTotalCostPreview"),
   importTotalPiecesPreview: document.querySelector("#importTotalPiecesPreview"),
+  latestImportText: document.querySelector("#latestImportText"),
+  latestImportValue: document.querySelector("#latestImportValue"),
+  latestSaleText: document.querySelector("#latestSaleText"),
+  latestSaleValue: document.querySelector("#latestSaleValue"),
   invoiceBankAccountInput: document.querySelector("#invoiceBankAccountInput"),
   invoiceBankNameInput: document.querySelector("#invoiceBankNameInput"),
   invoiceCompanyNameInput: document.querySelector("#invoiceCompanyNameInput"),
@@ -118,6 +124,7 @@ const elements = {
   materialPurchaseId: document.querySelector("#materialPurchaseId"),
   materialPurchaseTableBody: document.querySelector("#materialPurchaseTableBody"),
   modalTitle: document.querySelector("#modalTitle"),
+  moneySummaryText: document.querySelector("#moneySummaryText"),
   netProfitValue: document.querySelector("#netProfitValue"),
   noteInput: document.querySelector("#noteInput"),
   otherCostInput: document.querySelector("#otherCostInput"),
@@ -136,6 +143,10 @@ const elements = {
   productTitle: document.querySelector("#productTitle"),
   profitHint: document.querySelector("#profitHint"),
   profitMarginValue: document.querySelector("#profitMarginValue"),
+  profitSnapshotCard: document.querySelector("#profitSnapshotCard"),
+  profitSnapshotFill: document.querySelector("#profitSnapshotFill"),
+  profitSnapshotText: document.querySelector("#profitSnapshotText"),
+  profitSnapshotValue: document.querySelector("#profitSnapshotValue"),
   profitProgressFill: document.querySelector("#profitProgressFill"),
   progressCaption: document.querySelector("#progressCaption"),
   progressFill: document.querySelector("#progressFill"),
@@ -182,6 +193,9 @@ const elements = {
   salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
+  stockFormulaText: document.querySelector("#stockFormulaText"),
+  stockFormulaValue: document.querySelector("#stockFormulaValue"),
+  stockSummaryText: document.querySelector("#stockSummaryText"),
   taxCostInput: document.querySelector("#taxCostInput"),
   toolbarCopy: document.querySelector("#toolbarCopy"),
   transportCostInput: document.querySelector("#transportCostInput"),
@@ -207,13 +221,7 @@ const collapsiblePanels = [
   {
     id: "summary",
     selector: "#summaryGrid",
-    title: "Товч үзүүлэлт",
-  },
-  {
-    id: "progress",
-    selector: ".progress-card",
-    headerSelector: ".progress-header",
-    title: "Борлуулалтын явц",
+    title: "Бүтээгдэхүүний самбар",
   },
   {
     id: "editor",
@@ -459,7 +467,9 @@ function render() {
   renderInventoryMeta();
   renderDashboard();
   renderSummary();
+  renderOverviewNotes();
   renderProgress();
+  renderProfitSnapshot();
   renderEntryTable();
   populateProductSelect();
   renderEditorPanels();
@@ -723,6 +733,71 @@ function renderSummary() {
   elements.receivableValue.textContent = formatMoney(stats.receivable);
 }
 
+function renderOverviewNotes() {
+  const product = getActiveProduct();
+  if (!product || state.role === "guest") {
+    elements.stockSummaryText.textContent = "Импорт бүртгэгдмэгц нийт нөөц, ашиглагдсан тоо, үлдэгдэл энд харагдана.";
+    elements.stockFormulaValue.textContent = "0 ш";
+    elements.stockFormulaText.textContent = "Үлдэгдэл = Нийт импорт - Борлуулсан - Гэмтэл";
+    elements.latestImportValue.textContent = "—";
+    elements.latestImportText.textContent = "Импортын эхний batch бүртгэгдээгүй байна.";
+    elements.moneySummaryText.textContent = "Нийт дүн, төлсөн, авлагын тооцоо борлуулалтын мөр бүрээс автоматаар гарна.";
+    elements.cashFormulaValue.textContent = "0 ₮";
+    elements.cashFormulaText.textContent = "Авлага = Нийт дүн - Төлсөн";
+    elements.latestSaleValue.textContent = "—";
+    elements.latestSaleText.textContent = "Борлуулалтын мөр ороогүй байна.";
+    return;
+  }
+
+  const stats = getInventoryStats(product.id);
+  const batches = getImportBatchesForProduct(product.id);
+  const entries = getEntriesForProduct(product.id);
+  const latestImport = batches[0] || null;
+  const latestSale = entries[entries.length - 1] || null;
+
+  elements.stockSummaryText.textContent = `${formatNumber(stats.batchCount)} batch • ${formatNumber(
+    stats.importedCrates,
+  )} авдар • ${formatNumber(stats.remainingPieces)} ширхэг үлдэгдэлтэй байна.`;
+  elements.stockFormulaValue.textContent = `${formatNumber(stats.remainingPieces)} ш`;
+  elements.stockFormulaText.textContent = `${formatNumber(stats.importedPieces)} импорт - ${formatNumber(
+    stats.soldPieces,
+  )} борлуулалт - ${formatNumber(stats.damagedPieces)} гэмтэл`;
+
+  if (latestImport) {
+    elements.latestImportValue.textContent = latestImport.date;
+    elements.latestImportText.textContent = `${formatNumber(latestImport.crates)} авдар • ${formatNumber(
+      latestImport.totalPieces,
+    )} ширхэг • ${formatMoney(getImportBatchTotalCost(latestImport))} ₮`;
+  } else {
+    elements.latestImportValue.textContent = "—";
+    elements.latestImportText.textContent = "Импортын эхний batch бүртгэгдээгүй байна.";
+  }
+
+  if (isAdmin()) {
+    elements.moneySummaryText.textContent = `${formatNumber(entries.length)} борлуулалтын мөр • ${formatMoney(
+      stats.collected,
+    )} ₮ төлөгдсөн • ${formatMoney(stats.receivable)} ₮ нээлттэй авлагатай байна.`;
+    elements.cashFormulaText.textContent = `${formatMoney(stats.billed)} нийт дүн - ${formatMoney(stats.collected)} төлсөн`;
+  } else {
+    elements.moneySummaryText.textContent = `${formatNumber(entries.length)} борлуулалтын мөр • ${formatMoney(
+      stats.receivable,
+    )} ₮ нээлттэй авлагатай байна.`;
+    elements.cashFormulaText.textContent = "Нээлттэй төлбөртэй мөрүүдийн үлдэгдэл дүн";
+  }
+
+  elements.cashFormulaValue.textContent = `${formatMoney(stats.receivable)} ₮`;
+
+  if (latestSale) {
+    elements.latestSaleValue.textContent = latestSale.date;
+    elements.latestSaleText.textContent = isAdmin()
+      ? `${latestSale.customer} • ${formatNumber(latestSale.quantity)} ш • ${formatMoney(latestSale.totalAmount)} ₮`
+      : `${latestSale.customer} • ${formatNumber(latestSale.quantity)} ш`;
+  } else {
+    elements.latestSaleValue.textContent = "—";
+    elements.latestSaleText.textContent = "Борлуулалтын мөр ороогүй байна.";
+  }
+}
+
 function renderProgress() {
   const product = getActiveProduct();
   if (!product || state.role === "guest") {
@@ -744,6 +819,37 @@ function renderProgress() {
   elements.progressCaption.textContent = `Борлуулсан ${formatNumber(stats.soldPieces)} ширхэг. Гэмтэлтэй/хагарсан ${formatNumber(
     stats.damagedPieces,
   )} ширхэгийг нэмбэл нийт ${stats.stockUseProgress.toFixed(1)}% ашиглагдсан байна.`;
+}
+
+function renderProfitSnapshot() {
+  const showSnapshot = isAdmin();
+  elements.profitSnapshotCard.hidden = !showSnapshot;
+
+  if (!showSnapshot) {
+    return;
+  }
+
+  const product = getActiveProduct();
+  const summary = product ? getProfitSummary(product.id) : buildEmptyProfitSummary();
+  const progress = Math.min(Math.max(summary.marginPercent, 0), 100);
+
+  elements.profitSnapshotValue.textContent = `${formatMoney(summary.netProfit)} ₮`;
+  elements.profitSnapshotValue.style.color = summary.netProfit < 0 ? "var(--danger)" : "var(--accent)";
+  elements.profitSnapshotFill.style.width = `${progress}%`;
+  elements.profitSnapshotFill.style.background =
+    summary.netProfit < 0
+      ? "linear-gradient(90deg, var(--danger), var(--warning))"
+      : "linear-gradient(90deg, var(--warm), var(--accent))";
+
+  if (!summary.totalImportedPieces && !summary.totalImportCost) {
+    elements.profitSnapshotText.textContent =
+      "Импортын өртөг бүртгэгдээгүй байна. Эхлээд import batch оруулж 1 ширхэгийн өртгөө тогтооно.";
+    return;
+  }
+
+  elements.profitSnapshotText.textContent = `1 ш өртөг ${formatMoney(summary.pieceCost)} ₮ • борлуулсан өртөг ${formatMoney(
+    summary.soldCost,
+  )} ₮ • цэвэр ашиг ${formatMoney(summary.netProfit)} ₮`;
 }
 
 function renderEditorZoneHeader() {
@@ -2543,3 +2649,4 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
