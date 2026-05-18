@@ -358,6 +358,18 @@ body.seller-view .seller-workspace {
   gap: 10px;
 }
 
+.seller-period-tabs {
+  width: 100%;
+  margin: 0 0 12px;
+  justify-content: space-between;
+}
+
+.seller-period-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 10px;
+}
+
 .seller-mini-entry {
   display: flex;
   justify-content: space-between;

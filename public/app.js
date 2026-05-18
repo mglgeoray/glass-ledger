@@ -18,6 +18,7 @@ const state = {
   businessSummary: {},
   activeProductId: null,
   dashboardPeriod: "today",
+  sellerSalesPeriod: "today",
 };
 
 let paymentDraftSeed = 0;
@@ -195,8 +196,10 @@ const elements = {
   salaryExpenseValue: document.querySelector("#salaryExpenseValue"),
   sellerStockPills: document.querySelector("#sellerStockPills"),
   sellerStockText: document.querySelector("#sellerStockText"),
+  sellerSalesPeriodLabel: document.querySelector("#sellerSalesPeriodLabel"),
   sellerTodayCount: document.querySelector("#sellerTodayCount"),
   sellerTodayList: document.querySelector("#sellerTodayList"),
+  sellerSalesPeriodTabs: document.querySelector("#sellerSalesPeriodTabs"),
   soldCostValue: document.querySelector("#soldCostValue"),
   soldValue: document.querySelector("#soldValue"),
   stockFormulaText: document.querySelector("#stockFormulaText"),
@@ -254,6 +257,7 @@ function bindEvents() {
   elements.addEntryButton.addEventListener("click", openNewEntryModal);
   elements.quickAddEntryButton.addEventListener("click", openNewEntryModal);
   elements.sellerStockPills?.addEventListener("click", handleSellerStockPillClick);
+  elements.sellerSalesPeriodTabs?.addEventListener("click", handleSellerSalesPeriodClick);
   elements.dashboardPeriodTabs.addEventListener("click", handleDashboardPeriodClick);
   elements.addPaymentPartButton.addEventListener("click", handleAddPaymentPart);
   elements.cancelModalButton.addEventListener("click", closeEntryModal);
@@ -701,7 +705,9 @@ function renderSellerWorkspace() {
   const product = getActiveProduct();
   const entries = product ? getEntriesForProduct(product.id) : [];
   const today = getTodayDateValue();
-  const todayEntries = entries.filter((entry) => entry.date === today).slice(-5).reverse();
+  const salesPeriod = state.sellerSalesPeriod || "today";
+  const periodEntries = entries.filter((entry) => isDateInDashboardPeriod(entry.date, salesPeriod, today));
+  const periodPreviewEntries = periodEntries.slice(-8).reverse();
   const receivableEntries = entries
     .filter((entry) => getEntryReceivableAmount(entry) > 0.009)
     .sort((left, right) => {
@@ -715,15 +721,19 @@ function renderSellerWorkspace() {
   const stats = product ? getInventoryStats(product.id) : { remainingPieces: 0 };
 
   elements.sellerReceivableCount.textContent = `${formatMoney(totalReceivable)} ₮`;
-  elements.sellerTodayCount.textContent = `${formatNumber(todayEntries.length)} мөр`;
+  elements.sellerTodayCount.textContent = `${formatNumber(periodEntries.length)} мөр`;
   elements.sellerStockText.textContent = `${formatNumber(stats.remainingPieces)} ш`;
+  elements.sellerSalesPeriodLabel.textContent = getSellerSalesPeriodLabel(salesPeriod).toUpperCase();
+  for (const button of elements.sellerSalesPeriodTabs.querySelectorAll("[data-seller-sales-period]")) {
+    button.classList.toggle("active", button.dataset.sellerSalesPeriod === salesPeriod);
+  }
   elements.sellerReceivableList.innerHTML = renderSellerMiniEntryList(
     receivableEntries,
     "Одоогоор авлагатай мөр алга байна.",
   );
   elements.sellerTodayList.innerHTML = renderSellerMiniEntryList(
-    todayEntries,
-    "Өнөөдөр борлуулалт алга байна.",
+    periodPreviewEntries,
+    `${getSellerSalesPeriodLabel(salesPeriod)} борлуулалт алга байна.`,
   );
   elements.sellerStockPills.innerHTML = state.products
     .map((item) => {
@@ -737,6 +747,17 @@ function renderSellerWorkspace() {
       `;
     })
     .join("");
+}
+
+function getSellerSalesPeriodLabel(periodKey) {
+  const labels = {
+    today: "Өнөөдөр",
+    week: "7 хоног",
+    month: "Сар",
+    year: "Жил",
+  };
+
+  return labels[periodKey] || labels.today;
 }
 
 function renderSellerMiniEntryList(entries, emptyText) {
@@ -2152,6 +2173,16 @@ function handleSellerStockPillClick(event) {
 
   state.activeProductId = button.dataset.productId;
   render();
+}
+
+function handleSellerSalesPeriodClick(event) {
+  const button = event.target.closest("[data-seller-sales-period]");
+  if (!button) {
+    return;
+  }
+
+  state.sellerSalesPeriod = button.dataset.sellerSalesPeriod || "today";
+  renderSellerWorkspace();
 }
 
 function updateFormSummary() {

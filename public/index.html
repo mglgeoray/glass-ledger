@@ -7,7 +7,7 @@
     <title>Шилний данс</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/styles.css?v=20260518c" />
+    <link rel="stylesheet" href="/styles.css?v=20260518d" />
   </head>
   <body>
     <div class="grain"></div>
@@ -62,10 +62,16 @@
         <article class="seller-focus-card">
           <div class="seller-card-header">
             <div>
-              <span class="seller-card-label">ӨНӨӨДӨР</span>
+              <span class="seller-card-label" id="sellerSalesPeriodLabel">ӨНӨӨДӨР</span>
               <h3>Нийт борлуулалт</h3>
             </div>
             <strong id="sellerTodayCount">0</strong>
+          </div>
+          <div class="seller-period-tabs segmented-control" id="sellerSalesPeriodTabs" aria-label="Борлуулалтын хугацаа">
+            <button class="active" type="button" data-seller-sales-period="today">Өнөөдөр</button>
+            <button type="button" data-seller-sales-period="week">7 хоног</button>
+            <button type="button" data-seller-sales-period="month">Сар</button>
+            <button type="button" data-seller-sales-period="year">Жил</button>
           </div>
           <div class="seller-mini-list" id="sellerTodayList"></div>
         </article>
@@ -1112,7 +1118,7 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260518c" defer></script>
+    <script src="/app.js?v=20260518d" defer></script>
   </body>
 </html>
 
